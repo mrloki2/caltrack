@@ -2,9 +2,9 @@
 <html lang="th" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CALTRACK — Personal Calorie Dial & Nutrition Engine</title>
-  <meta name="description" content="Minimalist Dynamic Calorie Dial with 3-Tier Threshold Shifting and Precision Nutrition Engine">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CALCOUNTING — Personal Calorie Dial & Nutrition Engine</title>
+  <meta name="description" content="Minimalist Dynamic Calorie Dial with Press-and-Hold Fast Run, Precision Search, and Favorite Star System">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -28,23 +28,40 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* Complete elimination of double-tap zoom & text selection on mobile */
+    *, *::before, *::after {
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    input, textarea {
+      touch-action: auto;
+      -webkit-user-select: auto;
+      user-select: auto;
+    }
     body {
       font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: #090e17;
       color: #f1f5f9;
       -webkit-font-smoothing: antialiased;
-      user-select: none;
+      overscroll-behavior: none;
     }
     .font-mono {
       font-family: 'JetBrains Mono', monospace;
     }
     
-    /* Smooth transitions */
+    /* Smooth dial animations */
     .dial-transition {
-      transition: stroke-dashoffset 0.35s ease-out, stroke 0.4s ease;
+      transition: stroke-dashoffset 0.25s ease-out, stroke 0.3s ease;
     }
 
-    /* Glow animations */
+    /* Tactile press effects */
+    .btn-hold-active:active {
+      transform: scale(0.96);
+    }
+
+    /* Glow effects */
     @keyframes pulseTierRed {
       0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
       50% { box-shadow: 0 0 45px rgba(239, 68, 68, 0.5); }
@@ -77,19 +94,19 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-2 sm:p-4 selection:bg-emerald-500/20 selection:text-emerald-300">
+<body class="min-h-screen flex items-center justify-center p-0 sm:p-4 selection:bg-emerald-500/20 selection:text-emerald-300">
 
   <!-- ============================================================== -->
   <!-- 1. AUTH GATE (REGISTER / LOGIN)                                -->
   <!-- ============================================================== -->
-  <div id="auth-container" class="w-full max-w-md bg-surface-card border border-surface-border rounded-2xl shadow-2xl overflow-hidden p-6 relative transition-all">
+  <div id="auth-container" class="w-full max-w-md bg-surface-card border-y sm:border border-surface-border rounded-none sm:rounded-2xl shadow-2xl overflow-hidden p-6 relative transition-all">
     <div class="text-center space-y-2 mb-6">
       <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono tracking-wider uppercase">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        CALTRACK // ACCESS_GATE
+        CALCOUNTING // ACCESS_GATE
       </div>
-      <h1 class="text-2xl font-bold tracking-tight text-white">CALTRACK</h1>
-      <p class="text-xs text-slate-400">ระบบคำนวณพลังงานและโควต้าแคลอรี่ส่วนบุคคล</p>
+      <h1 class="text-2xl font-bold tracking-tight text-white">CALCOUNTING</h1>
+      <p class="text-xs text-slate-400">ระบบนับถอยหลังแคลอรี่และโควต้าพลังงานส่วนบุคคล</p>
     </div>
 
     <!-- Mode Tabs: Register vs Login -->
@@ -108,21 +125,22 @@
         <div class="space-y-1">
           <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 flex justify-between">
             <span>ชื่อผู้ใช้ (USERNAME)</span>
-            <span class="text-emerald-400">REQUIRED</span>
+            <span class="text-emerald-400">ไม่แยกตัวพิมพ์เล็กใหญ่</span>
           </label>
-          <input type="text" id="reg-username" required placeholder="เช่น mrloki3" value="mrloki3"
+          <input type="text" id="reg-username" required placeholder="เช่น kj หรือ mrloki3" value="kj"
+            autocapitalize="none" autocomplete="username" spellcheck="false"
             class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono transition">
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div class="space-y-1">
             <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300">รหัส PIN (4-6 หลัก)</label>
-            <input type="password" id="reg-pin" required maxlength="6" pattern="[0-9]{4,6}" placeholder="เช่น 1234" value="1234"
+            <input type="password" id="reg-pin" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="ตัวเลข 4-6 หลัก" value="1234"
               class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono text-center tracking-widest transition">
           </div>
           <div class="space-y-1">
             <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300">ยืนยัน PIN</label>
-            <input type="password" id="reg-pin-confirm" required maxlength="6" pattern="[0-9]{4,6}" placeholder="ยืนยัน PIN" value="1234"
+            <input type="password" id="reg-pin-confirm" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="ยืนยัน PIN" value="1234"
               class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono text-center tracking-widest transition">
           </div>
         </div>
@@ -182,7 +200,7 @@
       </div>
 
       <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-semibold text-xs tracking-wide rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
-        <span>สร้างบัญชีและเริ่มใช้งาน CALTRACK</span>
+        <span>สร้างบัญชีและเริ่มใช้งาน</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
       </button>
     </form>
@@ -191,13 +209,20 @@
     <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4 hidden">
       <div class="space-y-3">
         <div class="space-y-1">
-          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300">ชื่อผู้ใช้ (USERNAME)</label>
-          <input type="text" id="login-username" required placeholder="ชื่อผู้ใช้ที่ลงทะเบียน" value="mrloki3"
+          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 flex justify-between">
+            <span>ชื่อผู้ใช้ (USERNAME)</span>
+            <span class="text-slate-500 text-[10px]">ตัวพิมพ์เล็ก/ใหญ่มีค่าเท่ากัน</span>
+          </label>
+          <input type="text" id="login-username" required placeholder="เช่น kj" value="kj"
+            autocapitalize="none" autocomplete="username" spellcheck="false"
             class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono transition">
         </div>
         <div class="space-y-1">
-          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300">รหัส PIN</label>
-          <input type="password" id="login-pin" required maxlength="6" pattern="[0-9]{4,6}" placeholder="รหัส PIN" value="1234"
+          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 flex justify-between">
+            <span>รหัส PIN</span>
+            <span class="text-emerald-400 text-[10px]">แป้นตัวเลข</span>
+          </label>
+          <input type="password" id="login-pin" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="รหัส PIN ตัวเลข" value="1234"
             class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono text-center tracking-widest transition">
         </div>
       </div>
@@ -205,7 +230,7 @@
       <div id="login-error" class="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg hidden font-mono"></div>
 
       <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-semibold text-xs tracking-wide rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
-        <span>เข้าสู่ระบบ CALTRACK</span>
+        <span>เข้าสู่ระบบ CALCOUNTING</span>
       </button>
 
       <div class="text-center pt-2">
@@ -254,25 +279,25 @@
       </div>
 
       <button onclick="dismissSuccessModal()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-bold text-xs tracking-wider uppercase rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 font-mono">
-        <span>เข้าสู่หน้ากดแคลอรี่ &rarr;</span>
+        <span>เริ่มนับถอยหลังแคลอรี่ &rarr;</span>
       </button>
     </div>
   </div>
 
 
   <!-- ============================================================== -->
-  <!-- 3. MAIN APPLICATION CONTAINER                                  -->
+  <!-- 3. MAIN APPLICATION CONTAINER (WITH STICKY TOP NAVIGATION)     -->
   <!-- ============================================================== -->
-  <div id="app-container" class="w-full max-w-md bg-surface-card border border-surface-border rounded-3xl shadow-2xl flex flex-col overflow-hidden min-h-[690px] relative hidden">
+  <div id="app-container" class="w-full max-w-md bg-surface-card border-x sm:border border-surface-border rounded-none sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden min-h-screen sm:min-h-[720px] relative hidden">
     
     <!-- Top Header Bar -->
-    <header class="px-5 pt-4 pb-3 border-b border-surface-border flex items-center justify-between bg-surface-card/90 backdrop-blur">
+    <header class="px-5 pt-3.5 pb-2.5 border-b border-surface-border flex items-center justify-between bg-surface-card">
       <div class="flex items-center gap-2">
-        <span class="text-[11px] font-mono tracking-wider uppercase text-emerald-400 font-bold">CALTRACK</span>
-        <span class="text-[10px] text-slate-400 font-mono px-2 py-0.5 rounded-full bg-surface-bg border border-surface-border" id="header-user-tag">mrloki3</span>
+        <span class="text-[11px] font-mono tracking-wider uppercase text-emerald-400 font-bold">CALCOUNTING</span>
+        <span class="text-[10px] text-slate-300 font-mono px-2 py-0.5 rounded-full bg-surface-bg border border-surface-border" id="header-user-tag">kj</span>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="resetTodayBalance()" title="รีเซ็ตยอดกลับสู่โควต้าเต็มวัน" class="text-xs text-slate-400 hover:text-emerald-400 p-1.5 rounded-lg hover:bg-surface-bg border border-transparent hover:border-surface-border transition flex items-center gap-1 font-mono">
+        <button onclick="resetTodayBalance()" title="รีเซ็ตยอดกลับสู่โควต้าเต็มวัน" class="text-xs text-slate-400 hover:text-emerald-400 px-2 py-1 rounded-lg hover:bg-surface-bg border border-surface-border/60 transition flex items-center gap-1 font-mono">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           <span class="text-[10px]">RESET</span>
         </button>
@@ -282,32 +307,50 @@
       </div>
     </header>
 
+    <!-- STICKY TOP NAVIGATION BAR (ตามที่รีเควส: ย้ายแถบเมนูขึ้นข้างบน และเลื่อนตามลงมา) -->
+    <nav class="sticky top-0 z-40 bg-surface-card/95 backdrop-blur border-b border-surface-border px-3 py-2 flex items-center justify-around text-xs shrink-0 shadow-md">
+      
+      <button onclick="switchTab('dial')" id="nav-dial" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-emerald-400 bg-surface-bg font-semibold border border-surface-border transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 3"/></svg>
+        <span>นับถอยหลัง</span>
+      </button>
+
+      <button onclick="switchTab('search')" id="nav-search" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-slate-400 hover:text-slate-200 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <span>ค้นหาอาหาร</span>
+      </button>
+
+      <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-slate-400 hover:text-slate-200 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        <span>โปรไฟล์</span>
+      </button>
+
+    </nav>
+
     <!-- Main Screens Viewport -->
     <main class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col justify-between relative space-y-4">
 
       <!-- ================= SCREEN 1: THE BIG CALORIE DIAL ================= -->
-      <section id="screen-dial" class="flex-1 flex flex-col justify-between space-y-4">
+      <section id="screen-dial" class="flex-1 flex flex-col justify-between space-y-3">
         
-        <!-- Dynamic Level Status Pill (TDEE vs BMR vs BMI Alert) -->
+        <!-- Status Pill Above Circle -->
         <div class="text-center pt-1">
           <div id="dynamic-mode-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold transition-all border">
             <span id="dynamic-badge-dot" class="w-2 h-2 rounded-full animate-ping"></span>
-            <span id="dynamic-badge-text">โหมด TDEE: โควต้าพลังงานเต็ม</span>
+            <span id="dynamic-badge-text">ระดับ 1: ใช้งานตามโควต้า TDEE</span>
           </div>
           <p id="dynamic-badge-sub" class="text-[11px] text-slate-400 mt-1 font-light">
-            คำนวณจากเกณฑ์การใช้พลังงานสูงสุดของวัน
+            พลังงานยังเหลือสบายตัว กิจกรรมในเกณฑ์สมดุล
           </p>
         </div>
 
-        <!-- The Big Visual Circular Gauge -->
-        <div class="flex flex-col items-center justify-center my-auto py-2">
+        <!-- The Big Visual Circular Gauge (ตัวหนังสือสะอาด ไม่ล้นทับเส้นกรอบ) -->
+        <div class="flex flex-col items-center justify-center my-auto py-1">
           <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
             
             <!-- SVG Progress Ring -->
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 240 240">
-              <!-- Background Circle -->
               <circle cx="120" cy="120" r="100" stroke="#1e293b" stroke-width="14" fill="transparent"/>
-              <!-- Dynamic Colored Progress Circle -->
               <circle id="dial-circle" cx="120" cy="120" r="100" 
                 stroke="#10b981" stroke-width="14" 
                 stroke-linecap="round" 
@@ -317,61 +360,60 @@
                 class="dial-transition"/>
             </svg>
 
-            <!-- Center Value Display -->
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-              <span class="text-[11px] font-mono tracking-widest text-slate-400 uppercase">CALORIE REMAINING</span>
-              
-              <!-- Massive Main Calorie Counter -->
+            <!-- Center Value Display: เฉพาะตัวเลขใหญ่และหน่วย สะอาดตา ไม่ล้นกรอบ -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+              <span class="text-[10px] font-mono tracking-widest text-slate-400 uppercase">CALORIE REMAINING</span>
               <div id="main-cal-display" class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1 transition-all">
-                2,450
+                3,388
               </div>
-
-              <!-- Shifting Metric Indicator (Changes based on tier) -->
-              <div class="space-y-0.5">
-                <div id="tier-metric-label" class="text-xs font-mono font-bold text-emerald-400 uppercase transition-all">
-                  TDEE TARGET: 2,450
-                </div>
-                <div id="tier-secondary-label" class="text-[10px] font-mono text-slate-500">
-                  ฐาน BMR: 1,650 kcal
-                </div>
-              </div>
+              <span class="text-xs font-mono font-bold text-slate-400 tracking-wider">KCAL</span>
             </div>
           </div>
 
-          <!-- Quick Info Ratio -->
-          <div class="flex items-center justify-center gap-6 text-xs font-mono text-slate-400 mt-2">
-            <div>กินไปแล้ว: <span id="eaten-cal-display" class="font-bold text-slate-200">0</span> kcal</div>
-            <div class="w-1 h-1 rounded-full bg-slate-700"></div>
-            <div>สัดส่วน: <span id="percent-display" class="font-bold text-emerald-400">100%</span></div>
+          <!-- ข้อมูลสถานะและระดับพลังงาน (อยู่นอกกรอบวงกลมอย่างเป็นระเบียบ ไม่ทับเส้น) -->
+          <div class="text-center mt-3 space-y-1">
+            <div id="tier-metric-label" class="text-xs font-mono font-bold text-emerald-400 uppercase transition-all">
+              โหมด TDEE: โควต้าเต็ม 3,388 KCAL
+            </div>
+            <div id="tier-secondary-label" class="text-[11px] font-mono text-slate-400">
+              ระดับพลังงานกิจกรรมประจำวัน (สูงกว่า BMR 2,186 kcal)
+            </div>
+            
+            <div class="flex items-center justify-center gap-5 text-xs font-mono text-slate-400 pt-1.5">
+              <div>กินไปแล้ว: <span id="eaten-cal-display" class="font-bold text-slate-200">0</span> kcal</div>
+              <div class="w-1 h-1 rounded-full bg-slate-700"></div>
+              <div>สัดส่วน: <span id="percent-display" class="font-bold text-emerald-400">100%</span></div>
+            </div>
           </div>
         </div>
 
-        <!-- THE TWO HUGE BIG BUTTONS (LEFT: +50, RIGHT: -50) -->
+        <!-- THE TWO HUGE BIG BUTTONS (กดค้างตัวเลขจะรันเร็ว ไม่ซูมจอ) -->
         <div class="pt-2">
-          <div class="text-[10px] font-mono text-center text-slate-500 uppercase tracking-widest mb-2">
-            กดซ้ายเพื่อบวกคืน • กดขวาเพื่อตัดยอดแคลอรี่
+          <div class="text-[10px] font-mono text-center text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-center gap-1">
+            <span>กดแตะทีละ 50</span>
+            <span>•</span>
+            <span class="text-emerald-400">กดค้างเพื่อรันตัวเลขเร็ว</span>
           </div>
           <div class="grid grid-cols-2 gap-3 h-28 sm:h-32">
             
-            <!-- Left Huge Button: + 50 -->
-            <button onclick="adjustCalorie(50)" 
-              class="group relative bg-surface-bg hover:bg-slate-800/80 active:scale-[0.97] border-2 border-surface-border hover:border-slate-600 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden">
-              <div class="text-3xl sm:text-4xl font-black font-mono text-slate-200 group-hover:text-emerald-400 transition-colors">
+            <!-- Left Huge Button: + 50 (กดค้างได้) -->
+            <button id="btn-plus-huge"
+              class="btn-hold-active group relative bg-surface-bg hover:bg-slate-800/80 active:bg-slate-800 border-2 border-surface-border hover:border-slate-600 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden cursor-pointer select-none">
+              <div class="text-3xl sm:text-4xl font-black font-mono text-slate-200 group-hover:text-emerald-400 transition-colors pointer-events-none">
                 +50
               </div>
-              <span class="text-[11px] font-mono tracking-wider text-slate-400 uppercase mt-0.5">
+              <span class="text-[11px] font-mono tracking-wider text-slate-400 uppercase mt-0.5 pointer-events-none">
                 บวกคืน
               </span>
             </button>
 
-            <!-- Right Huge Button: - 50 -->
-            <button onclick="adjustCalorie(-50)" 
-              id="btn-minus-huge"
-              class="group relative bg-emerald-500 hover:bg-emerald-400 active:scale-[0.97] border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden">
-              <div class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-950">
+            <!-- Right Huge Button: - 50 (กดค้างได้) -->
+            <button id="btn-minus-huge"
+              class="btn-hold-active group relative bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden cursor-pointer select-none">
+              <div class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-950 pointer-events-none">
                 -50
               </div>
-              <span class="text-[11px] font-mono font-bold tracking-wider text-slate-900 uppercase mt-0.5">
+              <span class="text-[11px] font-mono font-bold tracking-wider text-slate-900 uppercase mt-0.5 pointer-events-none">
                 กินอาหาร (หักแคล)
               </span>
             </button>
@@ -389,7 +431,7 @@
           <div class="flex items-center justify-between">
             <div>
               <h2 class="text-sm font-semibold text-white">เสิร์ชแอนจิ้นสารอาหาร & แคลอรี่</h2>
-              <p class="text-[11px] text-slate-400">ฐานข้อมูลโภชนาการมาตรฐาน แยกตามกรรมวิธีปรุง</p>
+              <p class="text-[11px] text-slate-400">ฐานข้อมูลมาตรฐาน • ติดดาว ⭐ เพื่อดึงเมนูโปรดขึ้นบนสุด</p>
             </div>
             <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
               ACCURATE_DB
@@ -414,8 +456,8 @@
           <button onclick="filterCategory('drink')" class="cat-pill px-2.5 py-1 rounded-lg bg-surface-bg text-slate-400 border border-surface-border shrink-0" data-cat="drink">เครื่องดื่ม</button>
         </div>
 
-        <!-- Results List -->
-        <div id="search-results-list" class="space-y-2 flex-1 overflow-y-auto pr-1">
+        <!-- Results List (เลื่อนดูอาหารได้เต็มที่ ไม่ถูกแถบเมนูบัง) -->
+        <div id="search-results-list" class="space-y-2 flex-1 overflow-y-auto pr-1 pb-6">
           <!-- Dynamically injected items -->
         </div>
 
@@ -426,7 +468,7 @@
         <div class="p-4 bg-surface-bg border border-surface-border rounded-xl space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-[11px] text-slate-400 font-mono uppercase">BODY_PARAMETERS</span>
-            <span class="text-[11px] text-emerald-400 font-mono" id="profile-user-display">mrloki3</span>
+            <span class="text-[11px] text-emerald-400 font-mono" id="profile-user-display">kj</span>
           </div>
           
           <div class="grid grid-cols-3 gap-2">
@@ -487,25 +529,6 @@
 
     </main>
 
-    <!-- Bottom Navigation Bar (Home Dial vs Search vs Profile) -->
-    <nav class="border-t border-surface-border bg-surface-card px-4 py-2 flex items-center justify-around text-xs shrink-0">
-      
-      <button onclick="switchTab('dial')" id="nav-dial" class="nav-item flex-1 py-1.5 flex flex-col items-center gap-1 text-emerald-400 font-semibold transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 3"/></svg>
-        <span>กดแคลอรี่</span>
-      </button>
-
-      <button onclick="switchTab('search')" id="nav-search" class="nav-item flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <span>ค้นหาอาหาร</span>
-      </button>
-
-      <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-        <span>โปรไฟล์</span>
-      </button>
-
-    </nav>
   </div>
 
 
@@ -572,7 +595,7 @@
     ];
 
     // ==============================================================
-    // 2. USER PROFILE & DYNAMIC TDEE/BMR/BMI STATE
+    // 2. USER PROFILE & CASE-INSENSITIVE AUTH STATE
     // ==============================================================
     function getStoredUser() {
       try {
@@ -587,14 +610,29 @@
       localStorage.setItem('caltrack_user', JSON.stringify(userData));
     }
 
+    // Favorite foods persistence
+    function getStoredFavorites() {
+      try {
+        const fav = localStorage.getItem('caltrack_favorites');
+        return fav ? JSON.parse(fav) : [1, 8, 14, 33]; // default favorites: หมูย่าง, หมูทอด, ต้มเล้ง, กาแฟดำ
+      } catch (e) {
+        return [1, 8, 14, 33];
+      }
+    }
+
+    function saveStoredFavorites(favList) {
+      localStorage.setItem('caltrack_favorites', JSON.stringify(favList));
+    }
+
     let currentUser = getStoredUser();
+    let favoriteIds = getStoredFavorites();
 
     // Today's balance persistence
     function getTodayBalance() {
       if (!currentUser) return 2200;
       const todayStr = new Date().toDateString();
       try {
-        const stored = localStorage.getItem(`caltrack_dial_${currentUser.username}_${todayStr}`);
+        const stored = localStorage.getItem(`caltrack_dial_${currentUser.username.toLowerCase()}_${todayStr}`);
         if (stored !== null) return parseInt(stored, 10);
       } catch (e) {}
       return currentUser.tdee || 2200;
@@ -603,7 +641,7 @@
     function saveTodayBalance(val) {
       if (!currentUser) return;
       const todayStr = new Date().toDateString();
-      localStorage.setItem(`caltrack_dial_${currentUser.username}_${todayStr}`, val.toString());
+      localStorage.setItem(`caltrack_dial_${currentUser.username.toLowerCase()}_${todayStr}`, val.toString());
     }
 
     let currentBalance = 2200;
@@ -611,19 +649,6 @@
     // ==============================================================
     // 3. 3-TIER DYNAMIC LEVEL & COLOR LOGIC
     // ==============================================================
-    /*
-      Level 1 (🟢 เขียว - เต็มกราฟ/ปลอดภัย):
-      - เหลือมากกว่าระดับ BMR (> 60% ของ TDEE)
-      - ตัวเลขโชว์: กำลังใช้โควต้า TDEE เพื่อกิจกรรมประจำวัน
-
-      Level 2 (🟠 ส้ม - พอดี/เริ่มเข้าสู่ขีดจำกัด):
-      - เหลืออยู่ในช่วงใกล้ BMR หรือ 30% - 60%
-      - ตัวเลขสลับมาเน้น: แตะระดับ BMR (พลังงานขั้นต่ำของอวัยวะ)
-
-      Level 3 (🔴 แดง - แคลจะหมด/เกินขีดจำกัด):
-      - เหลือต่ำกว่า 30% หรือติดลบ
-      - สลับมาเป็น: BMI Impact / Deficit Alert (โควต้าใกล้หมดหรือกินเกิน)
-    */
     function renderDialUI() {
       if (!currentUser) return;
 
@@ -649,7 +674,6 @@
       const badgeSub = document.getElementById('dynamic-badge-sub');
       const minusBtn = document.getElementById('btn-minus-huge');
 
-      // Update basic numbers
       mainDisplay.innerText = bal.toLocaleString();
       eatenDisplay.innerText = eaten.toLocaleString();
       pctDisplay.innerText = `${pct}%`;
@@ -659,21 +683,21 @@
       const offset = circumference - (Math.min(1, Math.max(0, ratio)) * circumference);
       circle.style.strokeDashoffset = offset;
 
-      // Dynamic Shifting: 3 Tiers
+      // Dynamic Shifting: 3 Tiers (OUTSIDE the circle, cleanly displayed)
       if (bal >= bmr) {
         // TIER 1: GREEN (TDEE ZONE)
         circle.setAttribute('stroke', '#10b981');
         mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1';
         tierMetric.className = 'text-xs font-mono font-bold text-emerald-400 uppercase';
-        tierMetric.innerText = `โหมด TDEE: โควต้าเต็ม ${tdee.toLocaleString()} kcal`;
-        tierSecondary.innerText = `ระดับพลังงานกิจกรรมประจำวัน (สูงกว่า BMR ${bmr.toLocaleString()})`;
+        tierMetric.innerText = `โหมด TDEE: โควต้าเต็ม ${tdee.toLocaleString()} KCAL`;
+        tierSecondary.innerText = `ระดับพลังงานกิจกรรมประจำวัน (สูงกว่า BMR ${bmr.toLocaleString()} kcal)`;
 
         badgeBox.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
         badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
         badgeText.innerText = 'ระดับ 1: ใช้งานตามโควต้า TDEE';
         badgeSub.innerText = 'พลังงานยังเหลือสบายตัว กิจกรรมในเกณฑ์สมดุล';
 
-        minusBtn.className = 'group relative bg-emerald-500 hover:bg-emerald-400 active:scale-[0.97] border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden';
+        minusBtn.className = 'btn-hold-active group relative bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden cursor-pointer select-none';
       } 
       else if (bal > 300 && bal < bmr) {
         // TIER 2: ORANGE (BMR ZONE)
@@ -688,7 +712,7 @@
         badgeText.innerText = 'ระดับ 2: กำลังพอดี (ใกล้ถึงขีด BMR)';
         badgeSub.innerText = 'พลังงานเริ่มลดลงสู่ระดับพื้นฐาน เหมาะกับมื้อเบาๆ';
 
-        minusBtn.className = 'group relative bg-amber-500 hover:bg-amber-400 active:scale-[0.97] border-2 border-amber-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-amber-500/20 text-slate-950 overflow-hidden';
+        minusBtn.className = 'btn-hold-active group relative bg-amber-500 hover:bg-amber-400 active:bg-amber-600 border-2 border-amber-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-amber-500/20 text-slate-950 overflow-hidden cursor-pointer select-none';
       } 
       else {
         // TIER 3: RED (CRITICAL / DEFICIT / BMI IMPACT)
@@ -710,7 +734,7 @@
         badgeDot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-ping';
         badgeSub.innerText = 'ระวังการรับประทานมื้อดึกเกินความจำเป็น';
 
-        minusBtn.className = 'group relative bg-rose-500 hover:bg-rose-400 active:scale-[0.97] border-2 border-rose-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-rose-500/30 text-white overflow-hidden';
+        minusBtn.className = 'btn-hold-active group relative bg-rose-500 hover:bg-rose-400 active:bg-rose-600 border-2 border-rose-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-rose-500/30 text-white overflow-hidden cursor-pointer select-none';
       }
     }
 
@@ -718,6 +742,49 @@
       currentBalance += amount;
       saveTodayBalance(currentBalance);
       renderDialUI();
+    }
+
+    // ==============================================================
+    // 4. PRESS-AND-HOLD RAPID FAST RUN FUNCTIONALITY
+    // ==============================================================
+    function setupHoldButton(buttonId, amount) {
+      const btn = document.getElementById(buttonId);
+      if (!btn) return;
+
+      let holdTimeout = null;
+      let repeatInterval = null;
+      let isHolding = false;
+
+      const startHold = (e) => {
+        // Prevent right clicks or gestures
+        if (e.button && e.button !== 0) return;
+        e.preventDefault();
+        isHolding = true;
+
+        // Immediate single tap
+        adjustCalorie(amount);
+
+        // After 280ms, begin rapid repeating
+        holdTimeout = setTimeout(() => {
+          let stepDelay = 70; // 70ms per 50 kcal step
+          repeatInterval = setInterval(() => {
+            if (!isHolding) return;
+            adjustCalorie(amount);
+          }, stepDelay);
+        }, 280);
+      };
+
+      const endHold = (e) => {
+        isHolding = false;
+        if (holdTimeout) { clearTimeout(holdTimeout); holdTimeout = null; }
+        if (repeatInterval) { clearInterval(repeatInterval); repeatInterval = null; }
+      };
+
+      btn.addEventListener('pointerdown', startHold);
+      btn.addEventListener('pointerup', endHold);
+      btn.addEventListener('pointercancel', endHold);
+      btn.addEventListener('pointerleave', endHold);
+      btn.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
     function resetTodayBalance() {
@@ -734,7 +801,6 @@
       saveTodayBalance(currentBalance);
       renderDialUI();
       showToast(`หักยอด ${name} (-${cal} kcal) เข้าหน้าหลักแล้ว!`);
-      // Switch back to dial
       switchTab('dial');
     }
 
@@ -751,10 +817,23 @@
     }
 
     // ==============================================================
-    // 4. PRECISION FOOD SEARCH ENGINE
+    // 5. PRECISION FOOD SEARCH ENGINE WITH FAVORITE STAR SORTING
     // ==============================================================
     let currentCategory = 'all';
     let searchQuery = '';
+
+    function toggleFavoriteFood(id, e) {
+      if (e) e.stopPropagation();
+      const idx = favoriteIds.indexOf(id);
+      if (idx > -1) {
+        favoriteIds.splice(idx, 1);
+      } else {
+        favoriteIds.push(id);
+      }
+      saveStoredFavorites(favoriteIds);
+      renderFoodSearchList();
+      showToast(favoriteIds.includes(id) ? 'ติดดาวเป็นเมนูโปรดแล้ว ⭐' : 'ยกเลิกเมนูโปรด');
+    }
 
     function renderFoodSearchList() {
       const listEl = document.getElementById('search-results-list');
@@ -764,6 +843,15 @@
         const matchCat = currentCategory === 'all' || item.cat === currentCategory;
         const matchName = !q || item.name.toLowerCase().includes(q) || item.method.toLowerCase().includes(q);
         return matchCat && matchName;
+      });
+
+      // SORT: เมนูที่ติดดาวจะขึ้นมาอยู่บนสุดเสมอตามรีเควสของผู้ใช้!
+      filtered.sort((a, b) => {
+        const aFav = favoriteIds.includes(a.id);
+        const bFav = favoriteIds.includes(b.id);
+        if (aFav && !bFav) return -1;
+        if (!aFav && bFav) return 1;
+        return 0;
       });
 
       if (filtered.length === 0) {
@@ -776,36 +864,47 @@
         return;
       }
 
-      listEl.innerHTML = filtered.map(item => `
-        <div class="p-3.5 bg-surface-bg border border-surface-border hover:border-slate-700 rounded-xl flex items-center justify-between transition group">
-          <div class="space-y-1 pr-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-medium text-slate-100 group-hover:text-white">${item.name}</span>
-              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-surface-card border border-surface-border text-slate-400">
-                ${item.method}
-              </span>
+      listEl.innerHTML = filtered.map(item => {
+        const isFav = favoriteIds.includes(item.id);
+        return `
+          <div class="p-3.5 bg-surface-bg border ${isFav ? 'border-amber-500/40 bg-surface-card/60' : 'border-surface-border'} hover:border-slate-700 rounded-xl flex items-center justify-between transition group">
+            <div class="flex items-start gap-2.5 pr-2">
+              <!-- Star Button: กดติดดาวเพื่อเลื่อนขึ้นบนสุด -->
+              <button onclick="toggleFavoriteFood(${item.id}, event)" title="ติดดาวเมนูโปรด" class="mt-0.5 text-base transition transform active:scale-125 focus:outline-none">
+                ${isFav ? '<span class="text-amber-400">★</span>' : '<span class="text-slate-600 hover:text-amber-400">☆</span>'}
+              </button>
+
+              <div class="space-y-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-medium ${isFav ? 'text-amber-200 font-semibold' : 'text-slate-100 group-hover:text-white'}">${item.name}</span>
+                  ${isFav ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">โปรด</span>' : ''}
+                  <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-surface-card border border-surface-border text-slate-400">
+                    ${item.method}
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                  <span>${item.portion}</span>
+                  <span>•</span>
+                  <span>C:${item.c}g P:${item.p}g F:${item.f}g</span>
+                </div>
+              </div>
             </div>
-            <div class="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-              <span>${item.portion}</span>
-              <span>•</span>
-              <span>C:${item.c}g P:${item.p}g F:${item.f}g</span>
+            
+            <div class="flex items-center gap-2.5 shrink-0">
+              <div class="text-right">
+                <div class="font-mono font-bold text-sm ${isFav ? 'text-amber-300' : 'text-emerald-400'}">${item.cal}</div>
+                <div class="text-[9px] text-slate-500 font-mono">kcal</div>
+              </div>
+              <button onclick="deductMenuCalorie('${item.name}', ${item.cal})" 
+                title="หักยอดนี้ออกจากโควต้าหน้าแรก"
+                class="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 active:scale-95 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 hover:border-emerald-500 rounded-lg text-[11px] font-mono font-semibold transition flex items-center gap-1">
+                <span>หักยอด</span>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </button>
             </div>
           </div>
-          
-          <div class="flex items-center gap-3 shrink-0">
-            <div class="text-right">
-              <div class="font-mono font-bold text-sm text-emerald-400">${item.cal}</div>
-              <div class="text-[9px] text-slate-500 font-mono">kcal</div>
-            </div>
-            <button onclick="deductMenuCalorie('${item.name}', ${item.cal})" 
-              title="หักยอดนี้ออกจากโควต้าหน้าแรก"
-              class="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 active:scale-95 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 hover:border-emerald-500 rounded-lg text-[11px] font-mono font-semibold transition flex items-center gap-1">
-              <span>หักยอด</span>
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function handleFoodSearch(val) {
@@ -826,21 +925,19 @@
     }
 
     // ==============================================================
-    // 5. NAVIGATION & TAB SWITCHING
+    // 6. NAVIGATION & TAB SWITCHING
     // ==============================================================
     function switchTab(tabId) {
       const tabs = ['dial', 'search', 'profile'];
       tabs.forEach(t => {
         document.getElementById(`screen-${t}`).classList.add('hidden');
         const navBtn = document.getElementById(`nav-${t}`);
-        navBtn.classList.remove('text-emerald-400', 'font-semibold');
-        navBtn.classList.add('text-slate-400');
+        navBtn.className = 'nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-slate-400 hover:text-slate-200 transition';
       });
 
       document.getElementById(`screen-${tabId}`).classList.remove('hidden');
       const activeNav = document.getElementById(`nav-${tabId}`);
-      activeNav.classList.remove('text-slate-400');
-      activeNav.classList.add('text-emerald-400', 'font-semibold');
+      activeNav.className = 'nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-emerald-400 bg-surface-bg font-semibold border border-surface-border transition';
 
       if (tabId === 'dial') renderDialUI();
       if (tabId === 'search') renderFoodSearchList();
@@ -848,7 +945,7 @@
     }
 
     // ==============================================================
-    // 6. AUTH & ONBOARDING HANDLERS
+    // 7. AUTH & ONBOARDING HANDLERS (CASE-INSENSITIVE + NUMERIC KEYBOARD)
     // ==============================================================
     function setAuthMode(mode) {
       const formReg = document.getElementById('form-register');
@@ -890,7 +987,8 @@
 
     function handleRegister(e) {
       e.preventDefault();
-      const username = document.getElementById('reg-username').value.trim();
+      const rawUsername = document.getElementById('reg-username').value.trim();
+      const username = rawUsername.toLowerCase(); // Case-insensitive!
       const pin = document.getElementById('reg-pin').value.trim();
       const pinConfirm = document.getElementById('reg-pin-confirm').value.trim();
       const age = parseFloat(document.getElementById('reg-age').value) || 26;
@@ -908,7 +1006,8 @@
       const tdee = Math.round(bmr * activity);
 
       const newUser = {
-        username,
+        username: rawUsername, // Display username
+        usernameKey: username, // Case-insensitive key
         pin,
         age,
         height,
@@ -930,7 +1029,7 @@
 
     function handleLogin(e) {
       e.preventDefault();
-      const username = document.getElementById('login-username').value.trim();
+      const inputUsername = document.getElementById('login-username').value.trim().toLowerCase();
       const pin = document.getElementById('login-pin').value.trim();
       const loginErr = document.getElementById('login-error');
 
@@ -941,7 +1040,9 @@
         return;
       }
 
-      if (saved.username.toLowerCase() === username.toLowerCase() && saved.pin === pin) {
+      // Case-insensitive username check
+      const savedKey = (saved.usernameKey || saved.username || '').toLowerCase();
+      if (savedKey === inputUsername && saved.pin === pin) {
         currentUser = saved;
         loginErr.classList.add('hidden');
         bootMainApp();
@@ -1007,6 +1108,10 @@
       updateProfileBaselines();
       renderDialUI();
       switchTab('dial');
+
+      // Bind hold-to-repeat buttons
+      setupHoldButton('btn-plus-huge', 50);
+      setupHoldButton('btn-minus-huge', -50);
     }
 
     function updateProfileBaselines() {
@@ -1066,7 +1171,7 @@
       } else {
         document.getElementById('auth-container').classList.remove('hidden');
         document.getElementById('app-container').classList.add('hidden');
-        setAuthMode('register');
+        setAuthMode('login');
       }
     });
   </script>
