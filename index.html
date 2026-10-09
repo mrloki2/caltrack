@@ -361,6 +361,14 @@
       </div>
     </header>
 
+    <!-- Live Thai Real-time Date & Clock Bar (วิ่งเล็กๆ เรียบหรู ไม่เกะกะ) -->
+    <div class="bg-surface-bg/70 border-b border-surface-border/50 px-4 py-1 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 font-mono tracking-tight select-none shrink-0">
+      <div class="flex items-center gap-1.5 truncate">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+        <span id="live-thai-clock" class="text-slate-300"></span>
+      </div>
+    </div>
+
     <!-- STICKY TOP NAVIGATION BAR (4 แถบ: นับถอยหลัง | ค้นหาอาหาร | ประวัติ | โปรไฟล์) -->
     <nav class="sticky top-0 z-40 bg-surface-card/95 backdrop-blur border-b border-surface-border px-2.5 py-1.5 flex items-center justify-around text-xs shrink-0 shadow-md">
       
@@ -465,6 +473,15 @@
               <div class="w-1 h-1 rounded-full bg-slate-700"></div>
               <div>คงเหลือ: <span id="percent-display" class="font-bold text-emerald-400">100%</span></div>
             </div>
+          </div>
+
+          <!-- สวิชออกกำลังกาย: ล่างขวา เยื้องๆวงกลม สะอาดตา แค่คำว่าออกกำลังกาย -->
+          <div class="w-full flex justify-end pr-2 pt-1.5">
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none px-3 py-1 rounded-full bg-zinc-950/80 border border-surface-border/80 hover:border-slate-600 transition shadow-sm">
+              <span class="text-[11px] font-mono font-medium text-slate-300">ออกกำลังกาย</span>
+              <input type="checkbox" id="toggle-exercise" onchange="toggleExerciseState(this.checked)" class="sr-only peer">
+              <div class="w-8 h-4 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 peer-checked:after:bg-zinc-950 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+            </label>
           </div>
         </div>
 
@@ -718,6 +735,10 @@
         <div class="flex justify-between text-slate-400">
           <span>กินไปจริงในรอบนี้:</span>
           <span id="wakeup-eaten-val" class="font-bold text-slate-200">1,600 kcal</span>
+        </div>
+        <div class="flex justify-between text-slate-400">
+          <span>ออกกำลังกาย:</span>
+          <span id="wakeup-exercise-val" class="font-medium text-slate-400">ไม่ได้ออกกำลังกาย</span>
         </div>
         <div class="pt-1.5 border-t border-surface-border flex justify-between items-center">
           <span class="font-bold text-white">ผลลัพธ์รอบนี้:</span>
@@ -1064,15 +1085,162 @@
       localStorage.setItem(`calcounting_current_cycle_${userKey}`, val.toString());
     }
 
+    // Current Wake-up cycle exercise state (ออกกำลังกาย)
+    function getCycleExerciseState() {
+      if (!currentUser) return false;
+      const userKey = currentUser.username.toLowerCase();
+      try {
+        return localStorage.getItem(`calcounting_exercise_${userKey}`) === 'true';
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function setCycleExerciseState(val) {
+      if (!currentUser) return;
+      const userKey = currentUser.username.toLowerCase();
+      localStorage.setItem(`calcounting_exercise_${userKey}`, val ? 'true' : 'false');
+      const toggle = document.getElementById('toggle-exercise');
+      if (toggle) toggle.checked = val === true;
+    }
+
+    function toggleExerciseState(checked) {
+      setCycleExerciseState(checked);
+      triggerSilentSync();
+    }
+
+    // ==============================================================
+    // LIVE THAI DATE & CLOCK (วันอะไร วันที่เท่าไหร่ เดือนไหน พ.ศ.ไหน เวลาเท่าไหร่)
+    // ==============================================================
+    const THAI_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+    function updateThaiLiveClock() {
+      const el = document.getElementById('live-thai-clock');
+      if (!el) return;
+      const now = new Date();
+      const day = THAI_DAYS[now.getDay()];
+      const date = now.getDate();
+      const month = THAI_MONTHS[now.getMonth()];
+      const beYear = now.getFullYear() + 543;
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      el.innerText = `วัน${day}ที่ ${date} ${month} พ.ศ. ${beYear} • ${hh}:${mm}:${ss}`;
+    }
+
+    function startThaiLiveClock() {
+      updateThaiLiveClock();
+      setInterval(updateThaiLiveClock, 1000);
+    }
+
+    // ==============================================================
+    // SILENT CLOUD SYNC ENGINE (ไม่ต้องมีสถานะบอก แค่หลังบ้านรู้กัน)
+    // ==============================================================
+    let silentSyncDebounceTimer = null;
+
+    async function triggerSilentSync() {
+      if (!currentUser) return;
+      const userKey = (currentUser.usernameKey || currentUser.username || '').toLowerCase();
+      try {
+        const history = getStoredHistory();
+        const balance = currentBalance;
+        const exercise = getCycleExerciseState();
+
+        await fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save',
+            userKey,
+            user: currentUser,
+            history,
+            balance,
+            exercise,
+            updatedAt: Date.now()
+          })
+        });
+      } catch (e) {
+        // Silent failover - no status indicators on UI
+      }
+    }
+
+    function scheduleSilentSync() {
+      if (silentSyncDebounceTimer) clearTimeout(silentSyncDebounceTimer);
+      silentSyncDebounceTimer = setTimeout(() => {
+        triggerSilentSync();
+      }, 1200);
+    }
+
     let currentBalance = 2200;
 
     // ==============================================================
-    // 4. TACTILE SENSORY SYSTEM & FLOATING CHIP
+    // 4. TACTILE SENSORY SYSTEM & ACCUMULATING FLOATING DELTA
     // ==============================================================
+    let activeDeltaTotal = 0;
+    let deltaResetTimer = null;
+
+    function updateAccumulatedDelta(amount, customText = null) {
+      const anchor = document.getElementById('floating-anchor');
+      if (!anchor) return;
+
+      let chip = document.getElementById('accumulated-delta-chip');
+      if (!chip) {
+        chip = document.createElement('div');
+        chip.id = 'accumulated-delta-chip';
+        anchor.appendChild(chip);
+      }
+
+      if (customText) {
+        chip.className = 'floating-chip font-mono font-bold text-xs px-3.5 py-1 rounded-full border shadow-lg bg-emerald-500/20 text-emerald-300 border-emerald-500/40 transition-all select-none';
+        chip.innerText = customText;
+        if (deltaResetTimer) clearTimeout(deltaResetTimer);
+        deltaResetTimer = setTimeout(() => {
+          if (chip && chip.parentNode) chip.remove();
+          activeDeltaTotal = 0;
+        }, 800);
+        return;
+      }
+
+      // สะสมตัวเลขไปเรื่อยๆ เช่น 100, 150, 200...
+      if (activeDeltaTotal !== 0 && Math.sign(amount) !== Math.sign(activeDeltaTotal)) {
+        activeDeltaTotal = amount;
+      } else {
+        activeDeltaTotal += amount;
+      }
+
+      const isMinus = activeDeltaTotal < 0;
+      chip.className = `floating-chip font-mono font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full border shadow-xl transition-transform duration-75 select-none ${
+        isMinus 
+          ? 'bg-rose-500/25 text-rose-300 border-rose-500/50 shadow-rose-950/40' 
+          : 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50 shadow-emerald-950/40'
+      } scale-110`;
+
+      chip.innerText = isMinus ? `${activeDeltaTotal} kcal` : `+${activeDeltaTotal} kcal`;
+
+      // Pop bounce
+      requestAnimationFrame(() => {
+        if (chip) {
+          chip.classList.remove('scale-110');
+          chip.classList.add('scale-100');
+        }
+      });
+
+      if (deltaResetTimer) clearTimeout(deltaResetTimer);
+      deltaResetTimer = setTimeout(() => {
+        if (chip) {
+          chip.classList.add('opacity-0', '-translate-y-2');
+          setTimeout(() => {
+            if (chip && chip.parentNode) chip.remove();
+          }, 220);
+        }
+        activeDeltaTotal = 0;
+      }, 750);
+    }
+
     function triggerSensoryImpact(amount, isRapid = false) {
       const app = document.getElementById('app-container');
       const numDisplay = document.getElementById('main-cal-display');
-      const anchor = document.getElementById('floating-anchor');
       const tdee = currentUser ? currentUser.tdee : 2200;
 
       // 1. Mobile haptic vibration
@@ -1100,19 +1268,8 @@
         SoundEngine.playPlusTone();
       }
 
-      // 5. Floating Chip
-      if (!isRapid || Math.random() > 0.5) {
-        const chip = document.createElement('div');
-        const isMinus = amount < 0;
-        chip.className = `floating-chip font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border shadow-lg ${
-          isMinus 
-            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
-            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-        }`;
-        chip.innerText = isMinus ? `${amount} kcal` : `+${amount} kcal`;
-        anchor.appendChild(chip);
-        setTimeout(() => chip.remove(), 620);
-      }
+      // 5. Accumulating Floating Chip (สะสมตัวเลขจุดเดียว ไม่กระจายหลายที่)
+      updateAccumulatedDelta(amount);
     }
 
     // ==============================================================
@@ -1253,16 +1410,7 @@
           void numDisplay.offsetWidth;
           numDisplay.classList.add('number-bounce');
 
-          if (!isRapid || Math.random() > 0.6) {
-            const anchor = document.getElementById('floating-anchor');
-            if (anchor) {
-              const chip = document.createElement('div');
-              chip.className = 'floating-chip font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border shadow-lg bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
-              chip.innerText = 'เต็มเพดาน TDEE';
-              anchor.appendChild(chip);
-              setTimeout(() => chip.remove(), 620);
-            }
-          }
+          updateAccumulatedDelta(0, 'เต็มเพดาน TDEE');
 
           renderDialUI();
           return;
@@ -1275,6 +1423,7 @@
           showCeilingAlert();
           triggerSensoryImpact(amount, isRapid);
           renderDialUI();
+          scheduleSilentSync();
           return;
         }
       }
@@ -1283,6 +1432,7 @@
       saveCycleBalance(currentBalance);
       triggerSensoryImpact(amount, isRapid);
       renderDialUI();
+      scheduleSilentSync();
     }
 
     // ==============================================================
@@ -1357,6 +1507,13 @@
         badge.innerText = `พอดีเป๊ะ 0 kcal`;
       }
 
+      const exercised = getCycleExerciseState();
+      const exDisplay = document.getElementById('wakeup-exercise-val');
+      if (exDisplay) {
+        exDisplay.innerText = exercised ? 'ออกกำลังกายแล้ว' : 'ไม่ได้ออกกำลังกาย';
+        exDisplay.className = exercised ? 'font-bold text-emerald-400' : 'font-medium text-slate-400';
+      }
+
       document.getElementById('modal-wakeup').classList.remove('hidden');
     }
 
@@ -1376,6 +1533,7 @@
       const eaten = Math.max(0, tdee - currentBalance);
       const deficit = currentBalance; // Remaining balance is deficit
 
+      const exercised = getCycleExerciseState();
       const now = new Date();
       const record = {
         id: Date.now(),
@@ -1384,6 +1542,7 @@
         tdee,
         eaten,
         deficit,
+        exercised,
         status: deficit > 0 ? 'deficit' : (deficit < 0 ? 'surplus' : 'exact')
       };
 
@@ -1397,8 +1556,13 @@
       // Reset balance to full TDEE for the new day
       currentBalance = tdee;
       saveCycleBalance(currentBalance);
+
+      // Reset exercise state for new cycle
+      setCycleExerciseState(false);
+
       renderDialUI();
       renderHistoryScreen();
+      triggerSilentSync();
 
       if (newPins > oldPins) {
         // Trigger 1 KG MILESTONE UNLOCK MODAL!
@@ -1507,6 +1671,7 @@
                 <span class="text-[10px] text-slate-500 font-mono">${rec.timeStr} น.</span>
                 ${isDeficit ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">DEFICIT</span>' : ''}
                 ${isSurplus ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30">SURPLUS</span>' : ''}
+                ${rec.exercised ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-medium">ออกกำลังกาย</span>' : ''}
               </div>
               <div class="text-[10px] text-slate-400 font-mono">
                 โควต้า: ${rec.tdee.toLocaleString()} | กินไป: ${rec.eaten.toLocaleString()} kcal
@@ -1536,6 +1701,7 @@
         saveStoredHistory(history);
         renderHistoryScreen();
         updateMiniFlagBadge();
+        triggerSilentSync();
         showToast('ลบรายการประวัติแล้ว');
       }
     }
@@ -1545,6 +1711,7 @@
         saveStoredHistory([]);
         renderHistoryScreen();
         updateMiniFlagBadge();
+        triggerSilentSync();
         showToast('ล้างประวัติทั้งหมดเรียบร้อย');
       }
     }
@@ -1760,38 +1927,82 @@
 
       saveStoredUser(newUser);
       currentUser = newUser;
+      localStorage.setItem('calcounting_session_active', 'true');
+      localStorage.removeItem('calcounting_explicit_logged_out');
       currentBalance = tdee;
       saveCycleBalance(currentBalance);
+      triggerSilentSync();
 
       showSuccessModal(newUser);
     }
 
-    function handleLogin(e) {
+    async function handleLogin(e) {
       e.preventDefault();
       const inputUsername = document.getElementById('login-username').value.trim().toLowerCase();
       const pin = document.getElementById('login-pin').value.trim();
       const loginErr = document.getElementById('login-error');
 
       const saved = getStoredUser();
-      if (!saved) {
-        loginErr.innerText = 'ไม่พบบัญชีผู้ใช้ในอุปกรณ์นี้ กรุณากดลงทะเบียนใหม่';
-        loginErr.classList.remove('hidden');
-        return;
+      const savedKey = saved ? (saved.usernameKey || saved.username || '').toLowerCase() : '';
+
+      // 1. ตรวจสอบในเครื่องปัจจุบันก่อน (เร็วที่สุด)
+      if (saved && savedKey === inputUsername) {
+        if (saved.pin === pin) {
+          currentUser = saved;
+          loginErr.classList.add('hidden');
+          localStorage.setItem('calcounting_session_active', 'true');
+          localStorage.removeItem('calcounting_explicit_logged_out');
+          saveStoredUser(currentUser);
+          bootMainApp();
+          triggerSilentSync();
+          return;
+        } else {
+          loginErr.innerText = 'ชื่อผู้ใช้หรือรหัส PIN ไม่ถูกต้อง';
+          loginErr.classList.remove('hidden');
+          return;
+        }
       }
 
-      const savedKey = (saved.usernameKey || saved.username || '').toLowerCase();
-      if (savedKey === inputUsername && saved.pin === pin) {
-        currentUser = saved;
-        loginErr.classList.add('hidden');
-        bootMainApp();
-      } else {
-        loginErr.innerText = 'ชื่อผู้ใช้หรือรหัส PIN ไม่ถูกต้อง';
-        loginErr.classList.remove('hidden');
-      }
+      // 2. ซิงค์ออนไลน์เงียบๆ หลังบ้าน หากเปิดใช้งานในอุปกรณ์ใหม่
+      try {
+        const res = await fetch(`/api/sync?user=${encodeURIComponent(inputUsername)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.data && json.data.user) {
+            const cloudUser = json.data.user;
+            if (cloudUser.pin === pin) {
+              currentUser = cloudUser;
+              loginErr.classList.add('hidden');
+              localStorage.setItem('calcounting_session_active', 'true');
+              localStorage.removeItem('calcounting_explicit_logged_out');
+              saveStoredUser(currentUser);
+              if (json.data.history) saveStoredHistory(json.data.history);
+              if (typeof json.data.balance === 'number') {
+                currentBalance = json.data.balance;
+                saveCycleBalance(currentBalance);
+              }
+              if (typeof json.data.exercise === 'boolean') {
+                setCycleExerciseState(json.data.exercise);
+              }
+              bootMainApp();
+              return;
+            } else {
+              loginErr.innerText = 'ชื่อผู้ใช้หรือรหัส PIN ไม่ถูกต้อง';
+              loginErr.classList.remove('hidden');
+              return;
+            }
+          }
+        }
+      } catch (err) {}
+
+      loginErr.innerText = 'ชื่อผู้ใช้หรือรหัส PIN ไม่ถูกต้อง';
+      loginErr.classList.remove('hidden');
     }
 
     function handleLogout() {
       if (confirm('ต้องการออกจากระบบหรือไม่?')) {
+        localStorage.removeItem('calcounting_session_active');
+        localStorage.setItem('calcounting_explicit_logged_out', 'true');
         currentUser = null;
         document.getElementById('app-container').classList.add('hidden');
         document.getElementById('auth-container').classList.remove('hidden');
@@ -1851,6 +2062,12 @@
         currentBalance = maxTdee;
         saveCycleBalance(currentBalance);
       }
+
+      // ซิงค์สเตทสวิตช์ออกกำลังกายรอบปัจจุบัน
+      const exerciseState = getCycleExerciseState();
+      const toggleEx = document.getElementById('toggle-exercise');
+      if (toggleEx) toggleEx.checked = exerciseState;
+
       renderDialUI();
       renderHistoryScreen();
       switchTab('dial');
@@ -1898,6 +2115,7 @@
             saveCycleBalance(currentBalance);
             renderDialUI();
           }
+          scheduleSilentSync();
         }
       }
     }
@@ -1909,6 +2127,7 @@
       if (newP && newP.length >= 4 && newP.length <= 6) {
         currentUser.pin = newP;
         saveStoredUser(currentUser);
+        triggerSilentSync();
         alert('เปลี่ยนรหัส PIN เรียบร้อย');
       } else {
         alert('รูปแบบ PIN ไม่ถูกต้อง');
@@ -1930,8 +2149,18 @@
     // App Initializer
     window.addEventListener('DOMContentLoaded', () => {
       calcAuthBaselines();
-      if (currentUser) {
+      startThaiLiveClock();
+
+      const isSessionActive = localStorage.getItem('calcounting_session_active') === 'true';
+      const isExplicitLoggedOut = localStorage.getItem('calcounting_explicit_logged_out') === 'true';
+      const savedUser = getStoredUser();
+
+      // Permanent Persistent Login: ค้างการล็อกอินตลอดเวลา จนกว่าผู้ใช้จะกด Logout
+      if ((isSessionActive || !isExplicitLoggedOut) && savedUser) {
+        currentUser = savedUser;
+        localStorage.setItem('calcounting_session_active', 'true');
         bootMainApp();
+        triggerSilentSync();
       } else {
         document.getElementById('auth-container').classList.remove('hidden');
         document.getElementById('app-container').classList.add('hidden');
