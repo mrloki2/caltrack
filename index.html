@@ -88,16 +88,14 @@
       animation: numberSquish 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
 
-    /* Floating calorie chip delta */
-    @keyframes floatDeltaUp {
-      0% { opacity: 0; transform: translateY(10px) scale(0.7); }
-      20% { opacity: 1; transform: translateY(0) scale(1.1); }
-      80% { opacity: 1; transform: translateY(-22px) scale(1); }
-      100% { opacity: 0; transform: translateY(-38px) scale(0.8); }
+    /* Accumulating calorie chip pop & hold linger */
+    @keyframes chipPopScale {
+      0% { transform: scale(0.85) translateY(3px); }
+      50% { transform: scale(1.18) translateY(-2px); }
+      100% { transform: scale(1) translateY(0); }
     }
-    .floating-chip {
-      animation: floatDeltaUp 0.6s ease-out forwards;
-      pointer-events: none;
+    .chip-pop {
+      animation: chipPopScale 0.16s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
 
     /* Tactile button press simulation */
@@ -160,11 +158,12 @@
     <div class="text-center space-y-3 mb-6">
       <!-- Minimalist App Logo Badge (ไม่เอไอ มินิมอล เวกเตอร์แท้) -->
       <div class="w-14 h-14 mx-auto rounded-2xl bg-zinc-950 border border-emerald-500/30 flex items-center justify-center shadow-xl shadow-emerald-950/40">
-        <svg viewBox="0 0 40 40" fill="none" class="w-9 h-9" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="12" stroke="#1e293b" stroke-width="2.2" stroke-dasharray="2 3"/>
-          <path d="M 28 12 A 12 12 0 1 0 28 28" stroke="#10b981" stroke-width="3.2" stroke-linecap="round"/>
-          <line x1="15" y1="20" x2="25" y2="20" stroke="#f43f5e" stroke-width="2.6" stroke-linecap="round"/>
-          <circle cx="20" cy="8" r="1.5" fill="#34d399"/>
+        <svg viewBox="0 0 100 100" fill="none" class="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="34" stroke="#1e293b" stroke-width="5.5"/>
+          <path d="M 74 26 A 34 34 0 1 0 74 74" stroke="#10b981" stroke-width="7.5" stroke-linecap="round"/>
+          <circle cx="50" cy="16" r="3.8" fill="#34d399"/>
+          <text x="50" y="47" text-anchor="middle" dominant-baseline="central" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-weight="900" font-size="22" letter-spacing="-1">-0</text>
+          <text x="50" y="65" text-anchor="middle" dominant-baseline="central" fill="#34d399" font-family="'JetBrains Mono', monospace" font-weight="800" font-size="8.8" letter-spacing="1">KCAL</text>
         </svg>
       </div>
 
@@ -359,10 +358,11 @@
       <div class="flex items-center gap-2.5">
         <!-- Minimalist App Logo Vector Icon (ไม่เอไอ มินิมอล) -->
         <div class="w-7 h-7 rounded-lg bg-zinc-950 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-sm">
-          <svg viewBox="0 0 40 40" fill="none" class="w-4.5 h-4.5" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 28 12 A 12 12 0 1 0 28 28" stroke="#10b981" stroke-width="3.6" stroke-linecap="round"/>
-            <line x1="15" y1="20" x2="25" y2="20" stroke="#f43f5e" stroke-width="3" stroke-linecap="round"/>
-            <circle cx="20" cy="8" r="1.6" fill="#34d399"/>
+          <svg viewBox="0 0 100 100" fill="none" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 74 26 A 34 34 0 1 0 74 74" stroke="#10b981" stroke-width="8" stroke-linecap="round"/>
+            <circle cx="50" cy="16" r="4" fill="#34d399"/>
+            <text x="50" y="47" text-anchor="middle" dominant-baseline="central" fill="#ffffff" font-family="'JetBrains Mono', monospace" font-weight="900" font-size="24" letter-spacing="-1">-0</text>
+            <text x="50" y="66" text-anchor="middle" dominant-baseline="central" fill="#34d399" font-family="'JetBrains Mono', monospace" font-weight="800" font-size="9" letter-spacing="1">KCAL</text>
           </svg>
         </div>
         <span class="text-[11px] font-mono tracking-wider uppercase text-emerald-400 font-bold">CALCOUNTING</span>
@@ -455,10 +455,9 @@
             </button>
           </div>
 
-          <!-- Floating Delta Anchor for Tap Animations -->
-          <div id="floating-anchor" class="absolute top-14 flex items-center justify-center pointer-events-none z-20"></div>
-
           <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
+            <!-- Floating Delta Anchor for Tap Animations (positioned right above central number) -->
+            <div id="floating-anchor" class="absolute top-8 inset-x-0 flex items-center justify-center pointer-events-none z-30"></div>
             
             <!-- SVG Progress Ring -->
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 240 240">
@@ -474,9 +473,9 @@
 
             <!-- Center Value Display: เฉพาะตัวเลขใหญ่และหน่วย ยุบลงตามแรงกด -->
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
-              <span class="text-[10px] font-mono tracking-widest text-slate-400 uppercase">CALORIE REMAINING</span>
-              <div id="main-cal-display" class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1 transition-all select-none">
-                3,388
+              <span id="main-cal-title" class="text-[10px] font-mono tracking-widest text-slate-400 uppercase">สถานะรอบวัน // DEFICIT</span>
+              <div id="main-cal-display" class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-emerald-400 my-1 transition-all select-none">
+                -3,006
               </div>
               <span class="text-xs font-mono font-bold text-slate-400 tracking-wider">KCAL</span>
             </div>
@@ -522,25 +521,25 @@
         <div class="pt-2">
           <div class="grid grid-cols-2 gap-3 h-24 sm:h-28">
             
-            <!-- Left Huge Button: + 50 (กดค้างได้) -->
+            <!-- Left Huge Button: + 50 (กินอาหาร / เพิ่มแคลที่กิน) -->
             <button id="btn-plus-huge"
-              class="btn-tactile group relative bg-surface-bg hover:bg-slate-800/80 active:bg-slate-900 border-2 border-surface-border hover:border-slate-600 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden cursor-pointer select-none">
-              <div class="text-3xl sm:text-4xl font-black font-mono text-slate-200 group-hover:text-emerald-400 transition-colors pointer-events-none">
+              class="btn-tactile group relative bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 border-2 border-emerald-500/50 hover:border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-950/30 overflow-hidden cursor-pointer select-none">
+              <div class="text-3xl sm:text-4xl font-black font-mono text-emerald-400 group-hover:scale-105 transition-transform pointer-events-none">
                 +50
               </div>
-              <span class="text-[11px] font-mono tracking-wider text-slate-400 uppercase mt-0.5 pointer-events-none">
-                บวกคืน
+              <span class="text-[11px] font-mono font-bold tracking-wider text-emerald-300 uppercase mt-0.5 pointer-events-none">
+                กินอาหาร
               </span>
             </button>
 
-            <!-- Right Huge Button: - 50 (กดค้างได้ ยุบตัว มีเสียงหยดน้ำลด) -->
+            <!-- Right Huge Button: - 50 (ลดแคล / ลบออก / ชดเชย) -->
             <button id="btn-minus-huge"
-              class="btn-tactile group relative bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden cursor-pointer select-none">
-              <div class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-950 pointer-events-none">
+              class="btn-tactile group relative bg-surface-bg hover:bg-slate-800/80 active:bg-slate-900 border-2 border-surface-border hover:border-rose-500/50 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden cursor-pointer select-none">
+              <div class="text-3xl sm:text-4xl font-black font-mono text-slate-200 group-hover:text-rose-400 transition-colors pointer-events-none">
                 -50
               </div>
-              <span class="text-[11px] font-mono font-bold tracking-wider text-slate-900 uppercase mt-0.5 pointer-events-none">
-                กินอาหาร (หักแคล)
+              <span class="text-[11px] font-mono tracking-wider text-slate-400 group-hover:text-rose-300 uppercase mt-0.5 pointer-events-none">
+                ลดแคล
               </span>
             </button>
 
@@ -1089,17 +1088,20 @@
 
     // Current Wake-up cycle balance persistence
     function getCycleBalance() {
-      if (!currentUser) return 2200;
+      if (!currentUser) return -2200;
       const userKey = currentUser.username.toLowerCase();
       const tdee = currentUser.tdee || 2200;
       try {
         const stored = localStorage.getItem(`calcounting_current_cycle_${userKey}`);
         if (stored !== null) {
           const val = parseInt(stored, 10);
-          return Math.min(tdee, val);
+          if (val > 0 && val <= tdee) {
+            return val - tdee; // migrate old remainder to net deficit
+          }
+          return val;
         }
       } catch (e) {}
-      return tdee;
+      return -tdee;
     }
 
     function saveCycleBalance(val) {
@@ -1167,7 +1169,7 @@
       const userKey = (currentUser.usernameKey || currentUser.username || '').toLowerCase();
       try {
         const history = getStoredHistory();
-        const balance = currentBalance;
+        const balance = currentNetBalance;
         const exercise = getCycleExerciseState();
 
         await fetch('/api/sync', {
@@ -1195,17 +1197,48 @@
       }, 1200);
     }
 
-    let currentBalance = 2200;
+    let currentNetBalance = getCycleBalance();
 
     // ==============================================================
     // 4. TACTILE SENSORY SYSTEM & ACCUMULATING FLOATING DELTA
     // ==============================================================
     let activeDeltaTotal = 0;
-    let deltaResetTimer = null;
+    let deltaFadeTimer = null;
+    let deltaRemoveTimer = null;
+    let isHoldingActive = false;
+
+    function scheduleChipFade() {
+      if (deltaFadeTimer) clearTimeout(deltaFadeTimer);
+      if (deltaRemoveTimer) clearTimeout(deltaRemoveTimer);
+
+      // พอหยุดเลขจะค้างสักพัก (1.2 วินาที) ก่อนจางหายไป
+      deltaFadeTimer = setTimeout(() => {
+        fadeAndRemoveChip();
+      }, 1200);
+    }
+
+    function fadeAndRemoveChip() {
+      const chip = document.getElementById('accumulated-delta-chip');
+      if (!chip) {
+        activeDeltaTotal = 0;
+        return;
+      }
+      chip.style.transition = 'opacity 0.35s ease-out, transform 0.35s ease-out';
+      chip.style.opacity = '0';
+      chip.style.transform = 'translateY(-16px) scale(0.92)';
+
+      deltaRemoveTimer = setTimeout(() => {
+        if (chip && chip.parentNode) chip.remove();
+        activeDeltaTotal = 0; // ถ้าเลขจางหายไปก่อนก็เริ่มนับใหม่
+      }, 360);
+    }
 
     function updateAccumulatedDelta(amount, customText = null) {
       const anchor = document.getElementById('floating-anchor');
       if (!anchor) return;
+
+      if (deltaFadeTimer) { clearTimeout(deltaFadeTimer); deltaFadeTimer = null; }
+      if (deltaRemoveTimer) { clearTimeout(deltaRemoveTimer); deltaRemoveTimer = null; }
 
       let chip = document.getElementById('accumulated-delta-chip');
       if (!chip) {
@@ -1214,18 +1247,18 @@
         anchor.appendChild(chip);
       }
 
+      chip.style.transition = 'none';
+      chip.style.opacity = '1';
+      chip.style.transform = 'translateY(0)';
+
       if (customText) {
-        chip.className = 'floating-chip font-mono font-bold text-xs px-3.5 py-1 rounded-full border shadow-lg bg-emerald-500/20 text-emerald-300 border-emerald-500/40 transition-all select-none';
+        chip.className = 'font-mono font-bold text-xs sm:text-sm px-4 py-1.5 rounded-full border shadow-2xl bg-zinc-950/95 text-emerald-300 border-emerald-500/50 select-none chip-pop';
         chip.innerText = customText;
-        if (deltaResetTimer) clearTimeout(deltaResetTimer);
-        deltaResetTimer = setTimeout(() => {
-          if (chip && chip.parentNode) chip.remove();
-          activeDeltaTotal = 0;
-        }, 800);
+        if (!isHoldingActive) scheduleChipFade();
         return;
       }
 
-      // สะสมตัวเลขไปเรื่อยๆ เช่น 100, 150, 200...
+      // เลขเด้งทุกครั้งที่กด และเป็นการเพิ่มจำนวนสะสมตามครั้งที่กด
       if (activeDeltaTotal !== 0 && Math.sign(amount) !== Math.sign(activeDeltaTotal)) {
         activeDeltaTotal = amount;
       } else {
@@ -1233,38 +1266,29 @@
       }
 
       const isMinus = activeDeltaTotal < 0;
-      chip.className = `floating-chip font-mono font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full border shadow-xl transition-transform duration-75 select-none ${
-        isMinus 
-          ? 'bg-rose-500/25 text-rose-300 border-rose-500/50 shadow-rose-950/40' 
-          : 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50 shadow-emerald-950/40'
-      } scale-110`;
+      chip.innerText = isMinus ? `${activeDeltaTotal.toLocaleString()} kcal` : `+${activeDeltaTotal.toLocaleString()} kcal`;
 
-      chip.innerText = isMinus ? `${activeDeltaTotal} kcal` : `+${activeDeltaTotal} kcal`;
+      const themeClasses = isMinus
+        ? 'bg-rose-950/95 text-rose-300 border-rose-500/60 shadow-rose-950/60'
+        : 'bg-emerald-950/95 text-emerald-300 border-emerald-500/60 shadow-emerald-950/60';
 
-      // Pop bounce
-      requestAnimationFrame(() => {
-        if (chip) {
-          chip.classList.remove('scale-110');
-          chip.classList.add('scale-100');
-        }
-      });
+      chip.className = `font-mono font-bold text-xs sm:text-sm px-4 py-1.5 rounded-full border shadow-2xl select-none ${themeClasses} chip-pop`;
 
-      if (deltaResetTimer) clearTimeout(deltaResetTimer);
-      deltaResetTimer = setTimeout(() => {
-        if (chip) {
-          chip.classList.add('opacity-0', '-translate-y-2');
-          setTimeout(() => {
-            if (chip && chip.parentNode) chip.remove();
-          }, 220);
-        }
-        activeDeltaTotal = 0;
-      }, 750);
+      // Re-trigger scale pop animation on every tap
+      chip.classList.remove('chip-pop');
+      void chip.offsetWidth;
+      chip.classList.add('chip-pop');
+
+      // ถ้าไม่ได้กำลังกดค้าง ให้เริ่มนับเวลาค้าง 1.2 วินาที
+      if (!isHoldingActive) {
+        scheduleChipFade();
+      }
     }
 
     function triggerSensoryImpact(amount, isRapid = false) {
       const app = document.getElementById('app-container');
       const numDisplay = document.getElementById('main-cal-display');
-      const tdee = currentUser ? currentUser.tdee : 2200;
+      const tdee = currentUser ? (currentUser.tdee || 2200) : 2200;
 
       // 1. Mobile haptic vibration
       if (navigator.vibrate) {
@@ -1272,7 +1296,7 @@
       }
 
       // 2. Screen micro-shake
-      if (!isRapid || Math.random() > 0.4) {
+      if (!isRapid || Math.random() > 0.45) {
         app.classList.remove('shake-screen');
         void app.offsetWidth;
         app.classList.add('shake-screen');
@@ -1284,19 +1308,19 @@
       numDisplay.classList.add('number-bounce');
 
       // 4. Web Audio Water sound effect
-      if (amount < 0) {
-        const ratio = currentBalance / tdee;
-        SoundEngine.playWaterDrain(ratio);
+      if (amount > 0) {
+        const ratio = Math.max(0, Math.min(1, (tdee + currentNetBalance) / tdee));
+        SoundEngine.playWaterDrain(1 - ratio);
       } else {
         SoundEngine.playPlusTone();
       }
 
-      // 5. Accumulating Floating Chip (สะสมตัวเลขจุดเดียว ไม่กระจายหลายที่)
+      // 5. Accumulating Floating Chip (เลขเด้งและสะสมเพิ่มตามครั้งที่กด)
       updateAccumulatedDelta(amount);
     }
 
     // ==============================================================
-    // 5. 3-TIER DYNAMIC LEVEL & COLOR LOGIC
+    // 5. 3-TIER DYNAMIC LEVEL & DEFICIT LOGIC
     // ==============================================================
     function renderDialUI() {
       if (!currentUser) return;
@@ -1305,12 +1329,11 @@
       const bmr = currentUser.bmr || 1600;
       const bmi = currentUser.bmi || 22.5;
 
-      const bal = currentBalance;
-      const eaten = Math.max(0, tdee - bal);
-      const ratio = Math.max(0, bal / tdee);
-      const pct = Math.round(ratio * 100);
+      const net = currentNetBalance; // เริ่มต้นที่ -tdee เช่น -3,006 พอเลขหมดจะกลายเป็นบวก เช่น +150
+      const eaten = Math.max(0, net + tdee);
 
       // DOM elements
+      const mainTitle = document.getElementById('main-cal-title');
       const mainDisplay = document.getElementById('main-cal-display');
       const eatenDisplay = document.getElementById('eaten-cal-display');
       const pctDisplay = document.getElementById('percent-display');
@@ -1321,69 +1344,82 @@
       const badgeDot = document.getElementById('dynamic-badge-dot');
       const badgeText = document.getElementById('dynamic-badge-text');
       const badgeSub = document.getElementById('dynamic-badge-sub');
-      const minusBtn = document.getElementById('btn-minus-huge');
 
-      mainDisplay.innerText = bal.toLocaleString();
+      // Format Big Central Display:
+      if (net < 0) {
+        mainDisplay.innerText = `-${Math.abs(net).toLocaleString()}`;
+        if (mainTitle) mainTitle.innerText = 'สถานะรอบวัน // DEFICIT';
+      } else if (net > 0) {
+        mainDisplay.innerText = `+${net.toLocaleString()}`;
+        if (mainTitle) mainTitle.innerText = 'เกินเพดานปกติ // SURPLUS';
+      } else {
+        mainDisplay.innerText = '0';
+        if (mainTitle) mainTitle.innerText = 'พอดีเพดาน // EXACT TDEE';
+      }
+
       eatenDisplay.innerText = eaten.toLocaleString();
-      pctDisplay.innerText = `${pct}%`;
 
-      // SVG Stroke calculation (circ = 2 * PI * 100 = 628.32)
+      // Progress calculation: remaining deficit allowance
+      const remainingDeficit = Math.max(0, -net);
+      const ratio = Math.max(0, remainingDeficit / tdee);
+      const pct = Math.round(ratio * 100);
+      pctDisplay.innerText = net <= 0 ? `${pct}%` : `+${net.toLocaleString()} kcal`;
+
+      // SVG Stroke calculation
       const circumference = 628.32;
-      const offset = circumference - (Math.min(1, Math.max(0, ratio)) * circumference);
-      circle.style.strokeDashoffset = offset;
+      if (net <= 0) {
+        const offset = circumference - (Math.min(1, Math.max(0, ratio)) * circumference);
+        circle.style.strokeDashoffset = offset;
+      } else {
+        circle.style.strokeDashoffset = 0;
+      }
 
-      // Dynamic Shifting: 3 Tiers (OUTSIDE the circle, cleanly displayed)
-      if (bal >= bmr) {
-        // TIER 1: GREEN (TDEE ZONE)
+      // Dynamic Shifting: 3 Tiers
+      if (net <= -(tdee - bmr)) {
+        // TIER 1: GREEN (COMFORTABLE DEFICIT ZONE)
         circle.setAttribute('stroke', '#10b981');
-        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1 select-none';
+        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-emerald-400 my-1 select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-emerald-400 uppercase';
-        tierMetric.innerText = `โหมด TDEE: โควต้าเต็ม ${tdee.toLocaleString()} KCAL`;
-        tierSecondary.innerText = `ระดับพลังงานกิจกรรมประจำวัน (สูงกว่า BMR ${bmr.toLocaleString()} kcal)`;
+        tierMetric.innerText = `โหมด DEFICIT: ลบ ${Math.abs(net).toLocaleString()} KCAL`;
+        tierSecondary.innerText = `เผาผลาญติดลบตามแผน (กินไป ${eaten.toLocaleString()} / โควต้าเต็ม ${tdee.toLocaleString()} kcal)`;
 
         badgeBox.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
         badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
-        badgeText.innerText = 'ระดับ 1: ใช้งานตามโควต้า TDEE';
-        badgeSub.innerText = 'พลังงานยังเหลือสบายตัว กิจกรรมในเกณฑ์สมดุล';
-
-        minusBtn.className = 'btn-tactile group relative bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden cursor-pointer select-none';
+        badgeText.innerText = 'ระดับ 1: ปลอดภัย อยู่ในเกณฑ์ Calorie Deficit';
+        badgeSub.innerText = 'ลดน้ำหนักต่อเนื่อง พลังงานสะสมยังติดลบ';
       } 
-      else if (bal > 300 && bal < bmr) {
-        // TIER 2: ORANGE (BMR ZONE)
+      else if (net < 0) {
+        // TIER 2: AMBER (APPROACHING CEILING / CLOSE TO 0)
         circle.setAttribute('stroke', '#f59e0b');
         mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-amber-300 my-1 select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-amber-400 uppercase';
-        tierMetric.innerText = `โหมด BMR: แตะเส้นพลังงานพื้นฐาน`;
-        tierSecondary.innerText = `ระดับการเผาผลาญเพื่ออวัยวะภายใน (${bmr.toLocaleString()} kcal)`;
+        tierMetric.innerText = `ใกล้หมดโควต้า: เหลือติดลบ ${Math.abs(net).toLocaleString()} KCAL`;
+        tierSecondary.innerText = `ใกล้แตะเพดาน TDEE (กินไป ${eaten.toLocaleString()} / โควต้า ${tdee.toLocaleString()} kcal)`;
 
         badgeBox.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-amber-500/10 text-amber-400 border-amber-500/30';
         badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
-        badgeText.innerText = 'ระดับ 2: กำลังพอดี (ใกล้ถึงขีด BMR)';
-        badgeSub.innerText = 'พลังงานเริ่มลดลงสู่ระดับพื้นฐาน เหมาะกับมื้อเบาๆ';
-
-        minusBtn.className = 'btn-tactile group relative bg-amber-500 hover:bg-amber-400 active:bg-amber-600 border-2 border-amber-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-amber-500/20 text-slate-950 overflow-hidden cursor-pointer select-none';
+        badgeText.innerText = 'ระดับ 2: ใกล้ชนเพดาน TDEE';
+        badgeSub.innerText = 'โควต้าติดลบใกล้หมด แนะนำเป็นมื้อเบาๆ';
       } 
       else {
-        // TIER 3: RED (CRITICAL / DEFICIT / BMI IMPACT)
+        // TIER 3: RED (EXCEEDED CEILING / POSITIVE SURPLUS)
         circle.setAttribute('stroke', '#ef4444');
         mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-rose-400 my-1 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-rose-400 uppercase';
         
-        if (bal <= 0) {
-          tierMetric.innerText = `เกินโควต้าประจำวัน: ติดลบ ${Math.abs(bal)} kcal!`;
-          tierSecondary.innerText = `ส่งผลต่อดัชนี BMI (${bmi}) และการสะสมไขมันส่วนเกิน`;
-          badgeText.innerText = 'ระดับ 3: เกินเพดาน TDEE ของรอบนี้แล้ว!';
+        if (net === 0) {
+          tierMetric.innerText = `ชนเพดาน TDEE พอดี (0 KCAL)`;
+          tierSecondary.innerText = `กินเท่ากับที่เผาผลาญพอดี ไม่มีติดลบและไม่มีส่วนเกิน`;
+          badgeText.innerText = 'ระดับ 3: แตะเพดานพลังงานพอดี 0 KCAL';
         } else {
-          tierMetric.innerText = `โหมดเตือน BMI: แคลอรี่ใกล้หมด`;
-          tierSecondary.innerText = `ต่ำกว่าขีด BMR (${bmr}) เข้าสู่ช่วง Calorie Deficit เข้มงวด`;
-          badgeText.innerText = 'ระดับ 3: แคลใกล้หมดโควต้า!';
+          tierMetric.innerText = `เกินเพดานปกติ: +${net.toLocaleString()} KCAL (SURPLUS)!`;
+          tierSecondary.innerText = `นอกจากไม่ติดลบ ยังบวกเกินจากปกติ ส่งผลต่อดัชนี BMI (${bmi})`;
+          badgeText.innerText = 'ระดับ 3: กินเกินเพดานแล้ว (CALORIE SURPLUS)!';
         }
 
         badgeBox.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-rose-500/10 text-rose-400 border-rose-500/30 glow-red';
         badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping';
-        badgeSub.innerText = 'ระวังการรับประทานมื้อดึกเกินความจำเป็น';
-
-        minusBtn.className = 'btn-tactile group relative bg-rose-500 hover:bg-rose-400 active:bg-rose-600 border-2 border-rose-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-rose-500/30 text-white overflow-hidden cursor-pointer select-none';
+        badgeSub.innerText = 'พลังงานเกินจากปกติ แนะนำออกกำลังกายเผาผลาญเพิ่ม';
       }
 
       updateMiniFlagBadge();
@@ -1417,13 +1453,13 @@
 
     function adjustCalorie(amount, isRapid = false) {
       const tdee = currentUser ? (currentUser.tdee || 2200) : 2200;
+      const isExercised = getCycleExerciseState();
 
-      // เมื่อกดบวกแคล (+50): เช็คไม่ให้เกินเพดาน TDEE
-      if (amount > 0) {
-        // หากชนเพดานอยู่แล้ว ไม่ให้เพิ่มขึ้นอีก และแสดงแจ้งเตือนบางๆ มองทะลุได้ ไม่ขวางการกด
-        if (currentBalance >= tdee) {
-          currentBalance = tdee;
-          saveCycleBalance(currentBalance);
+      // เมื่อกดลดแคล (amount < 0): เช็คไม่ให้ต่ำกว่าเพดานธรรมชาติ (-tdee) หากไม่ได้ออกกำลังกาย
+      if (amount < 0 && !isExercised) {
+        if (currentNetBalance <= -tdee) {
+          currentNetBalance = -tdee;
+          saveCycleBalance(currentNetBalance);
           showCeilingAlert();
           SoundEngine.playCeilingTick();
           if (navigator.vibrate) navigator.vibrate(8);
@@ -1434,15 +1470,13 @@
           numDisplay.classList.add('number-bounce');
 
           updateAccumulatedDelta(0, 'เต็มเพดาน TDEE');
-
           renderDialUI();
           return;
         }
 
-        // หากบวกแล้วจะชนเพดาน ให้ตัดยอดที่เพดานพอดี
-        if (currentBalance + amount >= tdee) {
-          currentBalance = tdee;
-          saveCycleBalance(currentBalance);
+        if (currentNetBalance + amount < -tdee) {
+          currentNetBalance = -tdee;
+          saveCycleBalance(currentNetBalance);
           showCeilingAlert();
           triggerSensoryImpact(amount, isRapid);
           renderDialUI();
@@ -1451,8 +1485,8 @@
         }
       }
 
-      currentBalance += amount;
-      saveCycleBalance(currentBalance);
+      currentNetBalance += amount;
+      saveCycleBalance(currentNetBalance);
       triggerSensoryImpact(amount, isRapid);
       renderDialUI();
       scheduleSilentSync();
@@ -1473,24 +1507,30 @@
         if (e.button && e.button !== 0) return;
         e.preventDefault();
         isHolding = true;
+        isHoldingActive = true;
 
         // Immediate tap
         adjustCalorie(amount, false);
 
-        // Hold start
+        // Hold start: รันตัวเลขเร็วตามวินาทีที่กดค้าง
         holdTimeout = setTimeout(() => {
-          let stepDelay = 70;
+          let stepDelay = 65;
           repeatInterval = setInterval(() => {
             if (!isHolding) return;
             adjustCalorie(amount, true);
           }, stepDelay);
-        }, 260);
+        }, 250);
       };
 
       const endHold = (e) => {
+        if (!isHolding) return;
         isHolding = false;
+        isHoldingActive = false;
         if (holdTimeout) { clearTimeout(holdTimeout); holdTimeout = null; }
         if (repeatInterval) { clearInterval(repeatInterval); repeatInterval = null; }
+
+        // พอหยุดเลขจะค้างสักพักก่อนจางหายไป
+        scheduleChipFade();
       };
 
       btn.addEventListener('pointerdown', startHold);
@@ -1501,8 +1541,9 @@
     }
 
     function deductMenuCalorie(name, cal) {
-      adjustCalorie(-cal, false);
-      showToast(`หักยอด ${name} (-${cal} kcal) เรียบร้อย!`);
+      // บันทึกอาหารจากหน้าค้นหา: เพิ่มแคลที่กิน (+cal)
+      adjustCalorie(cal, false);
+      showToast(`บันทึก ${name} (+${cal} kcal) เรียบร้อย!`);
       switchTab('dial');
     }
 
@@ -1512,19 +1553,20 @@
     function promptWakeUpReset() {
       if (!currentUser) return;
       const tdee = currentUser.tdee || 2200;
-      const eaten = Math.max(0, tdee - currentBalance);
-      const diff = currentBalance; // Positive = Deficit; Negative = Surplus
+      const net = currentNetBalance;
+      const eaten = Math.max(0, net + tdee);
+      const achievedDeficit = -net; // บวก = Deficit สำเร็จ; ลบ = Surplus
 
       document.getElementById('wakeup-tdee-val').innerText = `${tdee.toLocaleString()} kcal`;
       document.getElementById('wakeup-eaten-val').innerText = `${eaten.toLocaleString()} kcal`;
 
       const badge = document.getElementById('wakeup-result-badge');
-      if (diff > 0) {
+      if (achievedDeficit > 0) {
         badge.className = 'font-bold px-2 py-0.5 rounded text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
-        badge.innerText = `ประหยัดได้ +${diff.toLocaleString()} kcal (Deficit สำเร็จ)`;
-      } else if (diff < 0) {
+        badge.innerText = `ประหยัดได้ +${achievedDeficit.toLocaleString()} kcal (Deficit สำเร็จ)`;
+      } else if (achievedDeficit < 0) {
         badge.className = 'font-bold px-2 py-0.5 rounded text-xs bg-rose-500/20 text-rose-400 border border-rose-500/40';
-        badge.innerText = `กินเกินโควต้า ${diff.toLocaleString()} kcal (Surplus)`;
+        badge.innerText = `กินเกินโควต้า +${Math.abs(achievedDeficit).toLocaleString()} kcal (Surplus)`;
       } else {
         badge.className = 'font-bold px-2 py-0.5 rounded text-xs bg-slate-500/20 text-slate-300 border border-slate-500/40';
         badge.innerText = `พอดีเป๊ะ 0 kcal`;
@@ -1553,8 +1595,9 @@
       const oldPins = Math.floor(Math.max(0, oldNetDeficit) / 7700);
 
       const tdee = currentUser.tdee || 2200;
-      const eaten = Math.max(0, tdee - currentBalance);
-      const deficit = currentBalance; // Remaining balance is deficit
+      const net = currentNetBalance;
+      const eaten = Math.max(0, net + tdee);
+      const deficit = -net; // บวก = Deficit สำเร็จ; ลบ = Surplus
 
       const exercised = getCycleExerciseState();
       const now = new Date();
@@ -1572,13 +1615,12 @@
       history.unshift(record);
       saveStoredHistory(history);
 
-      // Check if a new 1 kg pin was reached!
       const newNetDeficit = calculateNetDeficit(history);
       const newPins = Math.floor(Math.max(0, newNetDeficit) / 7700);
 
-      // Reset balance to full TDEE for the new day
-      currentBalance = tdee;
-      saveCycleBalance(currentBalance);
+      // เริ่มต้นรอบวันใหม่ด้วยการติดลบเต็มเพดาน (-tdee) เช่น -3,006 kcal
+      currentNetBalance = -tdee;
+      saveCycleBalance(currentNetBalance);
 
       // Reset exercise state for new cycle
       setCycleExerciseState(false);
@@ -1588,7 +1630,6 @@
       triggerSilentSync();
 
       if (newPins > oldPins) {
-        // Trigger 1 KG MILESTONE UNLOCK MODAL!
         showMilestoneCelebration(newPins);
       } else {
         showToast('ตื่นนอนเริ่มวันใหม่ บันทึกประวัติรอบก่อนเรียบร้อย');
@@ -1952,8 +1993,8 @@
       currentUser = newUser;
       localStorage.setItem('calcounting_session_active', 'true');
       localStorage.removeItem('calcounting_explicit_logged_out');
-      currentBalance = tdee;
-      saveCycleBalance(currentBalance);
+      currentNetBalance = -tdee;
+      saveCycleBalance(currentNetBalance);
       triggerSilentSync();
 
       showSuccessModal(newUser);
@@ -2001,8 +2042,8 @@
               saveStoredUser(currentUser);
               if (json.data.history) saveStoredHistory(json.data.history);
               if (typeof json.data.balance === 'number') {
-                currentBalance = json.data.balance;
-                saveCycleBalance(currentBalance);
+                currentNetBalance = json.data.balance;
+                saveCycleBalance(currentNetBalance);
               }
               if (typeof json.data.exercise === 'boolean') {
                 setCycleExerciseState(json.data.exercise);
@@ -2078,12 +2119,12 @@
 
       updateSoundIconUI();
 
-      currentBalance = getCycleBalance();
+      currentNetBalance = getCycleBalance();
       updateProfileBaselines();
-      const maxTdee = currentUser ? (currentUser.tdee || 2200) : 2200;
-      if (currentBalance > maxTdee) {
-        currentBalance = maxTdee;
-        saveCycleBalance(currentBalance);
+      const tdee = currentUser ? (currentUser.tdee || 2200) : 2200;
+      if (currentNetBalance < -tdee) {
+        currentNetBalance = -tdee;
+        saveCycleBalance(currentNetBalance);
       }
 
       // ซิงค์สเตทสวิตช์ออกกำลังกายรอบปัจจุบัน
@@ -2133,9 +2174,9 @@
           currentUser.tdee = tdee;
           saveStoredUser(currentUser);
 
-          if (currentBalance > tdee) {
-            currentBalance = tdee;
-            saveCycleBalance(currentBalance);
+          if (currentNetBalance < -tdee) {
+            currentNetBalance = -tdee;
+            saveCycleBalance(currentNetBalance);
             renderDialUI();
           }
           scheduleSilentSync();
