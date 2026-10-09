@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>CALCOUNTING — Personal Calorie Dial & Nutrition Engine</title>
-  <meta name="description" content="Minimalist Dynamic Calorie Dial with Press-and-Hold Fast Run, Precision Search, and Favorite Star System">
+  <title>CALCOUNTING — Personal Calorie Dial & Deficit Engine</title>
+  <meta name="description" content="ระบบนับถอยหลังแคลอรี่รายวัน บันทึกรอบวันด้วยปุ่มตื่นนอน ติดตาม Deficit ลดน้ำหนัก และปักหมุดธงทุก 1 kg (7,700 kcal)">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -56,9 +56,49 @@
       transition: stroke-dashoffset 0.25s ease-out, stroke 0.3s ease;
     }
 
-    /* Tactile press effects */
-    .btn-hold-active:active {
-      transform: scale(0.96);
+    /* Screen Micro-shake for tactile punch */
+    @keyframes microShake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-1.5px, 1px) rotate(-0.15deg); }
+      40% { transform: translate(1.5px, -1px) rotate(0.15deg); }
+      60% { transform: translate(-1px, 0.5px); }
+      80% { transform: translate(1px, -0.5px); }
+      100% { transform: translate(0, 0); }
+    }
+    .shake-screen {
+      animation: microShake 0.12s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    /* Number squish / bounce on pressure */
+    @keyframes numberSquish {
+      0% { transform: scale(1) translateY(0); }
+      35% { transform: scale(0.92) translateY(5px); }
+      75% { transform: scale(1.03) translateY(-1px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+    .number-bounce {
+      animation: numberSquish 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Floating calorie chip delta */
+    @keyframes floatDeltaUp {
+      0% { opacity: 0; transform: translateY(10px) scale(0.7); }
+      20% { opacity: 1; transform: translateY(0) scale(1.1); }
+      80% { opacity: 1; transform: translateY(-22px) scale(1); }
+      100% { opacity: 0; transform: translateY(-38px) scale(0.8); }
+    }
+    .floating-chip {
+      animation: floatDeltaUp 0.6s ease-out forwards;
+      pointer-events: none;
+    }
+
+    /* Tactile button press simulation */
+    .btn-tactile {
+      transition: transform 0.08s ease, filter 0.08s ease, box-shadow 0.08s ease;
+    }
+    .btn-tactile:active {
+      transform: scale(0.93) translateY(3px);
+      box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.5);
     }
 
     /* Glow effects */
@@ -92,6 +132,15 @@
       stroke-dashoffset: 48;
       animation: checkDraw 0.45s 0.4s cubic-bezier(0.65, 0, 0.45, 1) forwards;
     }
+
+    /* Milestone celebration animation */
+    @keyframes flagBounce {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(8deg); }
+    }
+    .flag-animate {
+      animation: flagBounce 1.2s infinite ease-in-out;
+    }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-0 sm:p-4 selection:bg-emerald-500/20 selection:text-emerald-300">
@@ -103,10 +152,10 @@
     <div class="text-center space-y-2 mb-6">
       <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono tracking-wider uppercase">
         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        CALCOUNTING // ACCESS_GATE
+        CALCOUNTING // DEFICIT_ENGINE
       </div>
       <h1 class="text-2xl font-bold tracking-tight text-white">CALCOUNTING</h1>
-      <p class="text-xs text-slate-400">ระบบนับถอยหลังแคลอรี่และโควต้าพลังงานส่วนบุคคล</p>
+      <p class="text-xs text-slate-400">ระบบนับถอยหลังแคลอรี่ • บันทึกวงจรตื่นนอน • ปักหมุดลดน้ำหนัก</p>
     </div>
 
     <!-- Mode Tabs: Register vs Login -->
@@ -288,64 +337,93 @@
   <!-- ============================================================== -->
   <!-- 3. MAIN APPLICATION CONTAINER (WITH STICKY TOP NAVIGATION)     -->
   <!-- ============================================================== -->
-  <div id="app-container" class="w-full max-w-md bg-surface-card border-x sm:border border-surface-border rounded-none sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden min-h-screen sm:min-h-[720px] relative hidden">
+  <div id="app-container" class="w-full max-w-md bg-surface-card border-x sm:border border-surface-border rounded-none sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden min-h-screen sm:min-h-[740px] relative hidden transition-transform">
     
     <!-- Top Header Bar -->
-    <header class="px-5 pt-3.5 pb-2.5 border-b border-surface-border flex items-center justify-between bg-surface-card">
+    <header class="px-4 pt-3.5 pb-2.5 border-b border-surface-border flex items-center justify-between bg-surface-card shrink-0">
       <div class="flex items-center gap-2">
         <span class="text-[11px] font-mono tracking-wider uppercase text-emerald-400 font-bold">CALCOUNTING</span>
         <span class="text-[10px] text-slate-300 font-mono px-2 py-0.5 rounded-full bg-surface-bg border border-surface-border" id="header-user-tag">kj</span>
       </div>
-      <div class="flex items-center gap-2">
-        <button onclick="resetTodayBalance()" title="รีเซ็ตยอดกลับสู่โควต้าเต็มวัน" class="text-xs text-slate-400 hover:text-emerald-400 px-2 py-1 rounded-lg hover:bg-surface-bg border border-surface-border/60 transition flex items-center gap-1 font-mono">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          <span class="text-[10px]">RESET</span>
+
+      <div class="flex items-center gap-1.5">
+        <!-- ปุ่มเล็กๆ สีเขียวดำ "ตื่นนอน" (รีเซ็ตวัน & บันทึกเข้าประวัติ ตามคำขอผู้ใช้) -->
+        <button onclick="promptWakeUpReset()" title="ตื่นนอน: ปิดรอบวันและบันทึกประวัติ" 
+          class="bg-zinc-950 hover:bg-emerald-950/60 active:scale-95 border border-emerald-500/40 hover:border-emerald-400 text-emerald-400 px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold flex items-center gap-1 shadow-sm transition">
+          <span class="text-xs">☀️</span>
+          <span>ตื่นนอน</span>
         </button>
+
+        <!-- Sound Toggle Button -->
+        <button onclick="toggleSound()" id="btn-sound-toggle" title="เปิด/ปิดเสียงเอฟเฟกต์น้ำลด" class="text-slate-400 hover:text-emerald-400 p-1.5 rounded-lg hover:bg-surface-bg border border-surface-border/60 transition">
+          <span id="sound-icon" class="text-xs">🔊</span>
+        </button>
+
+        <!-- Logout Button -->
         <button onclick="handleLogout()" title="ออกจากระบบ" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-surface-bg border border-transparent hover:border-surface-border transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         </button>
       </div>
     </header>
 
-    <!-- STICKY TOP NAVIGATION BAR (ตามที่รีเควส: ย้ายแถบเมนูขึ้นข้างบน และเลื่อนตามลงมา) -->
-    <nav class="sticky top-0 z-40 bg-surface-card/95 backdrop-blur border-b border-surface-border px-3 py-2 flex items-center justify-around text-xs shrink-0 shadow-md">
+    <!-- STICKY TOP NAVIGATION BAR (4 แถบ: นับถอยหลัง | ค้นหาอาหาร | ประวัติ | โปรไฟล์) -->
+    <nav class="sticky top-0 z-40 bg-surface-card/95 backdrop-blur border-b border-surface-border px-2.5 py-1.5 flex items-center justify-around text-xs shrink-0 shadow-md">
       
-      <button onclick="switchTab('dial')" id="nav-dial" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-emerald-400 bg-surface-bg font-semibold border border-surface-border transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 3"/></svg>
+      <button onclick="switchTab('dial')" id="nav-dial" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1 rounded-xl text-emerald-400 bg-surface-bg font-semibold border border-surface-border transition text-[11px] sm:text-xs">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 3"/></svg>
         <span>นับถอยหลัง</span>
       </button>
 
-      <button onclick="switchTab('search')" id="nav-search" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-slate-400 hover:text-slate-200 transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <button onclick="switchTab('search')" id="nav-search" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1 rounded-xl text-slate-400 hover:text-slate-200 transition text-[11px] sm:text-xs">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         <span>ค้นหาอาหาร</span>
       </button>
 
-      <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-slate-400 hover:text-slate-200 transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <!-- แถบประวัติ (แท็บใหม่สำหรับคนลดน้ำหนัก ดู Deficit และหมุดธง 1 kg) -->
+      <button onclick="switchTab('history')" id="nav-history" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1 rounded-xl text-slate-400 hover:text-slate-200 transition text-[11px] sm:text-xs">
+        <span class="text-xs">🚩</span>
+        <span>ประวัติ</span>
+      </button>
+
+      <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 py-1.5 flex items-center justify-center gap-1 rounded-xl text-slate-400 hover:text-slate-200 transition text-[11px] sm:text-xs">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         <span>โปรไฟล์</span>
       </button>
 
     </nav>
 
     <!-- Main Screens Viewport -->
-    <main class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col justify-between relative space-y-4">
+    <main class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col justify-between relative space-y-3">
 
       <!-- ================= SCREEN 1: THE BIG CALORIE DIAL ================= -->
-      <section id="screen-dial" class="flex-1 flex flex-col justify-between space-y-3">
+      <section id="screen-dial" class="flex-1 flex flex-col justify-between space-y-2">
         
-        <!-- Status Pill Above Circle -->
-        <div class="text-center pt-1">
-          <div id="dynamic-mode-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold transition-all border">
-            <span id="dynamic-badge-dot" class="w-2 h-2 rounded-full animate-ping"></span>
-            <span id="dynamic-badge-text">ระดับ 1: ใช้งานตามโควต้า TDEE</span>
+        <!-- Status Pill & Milestone Mini Bar -->
+        <div class="space-y-1.5 pt-0.5">
+          <div class="flex items-center justify-between">
+            <div id="dynamic-mode-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold transition-all border">
+              <span id="dynamic-badge-dot" class="w-1.5 h-1.5 rounded-full animate-ping"></span>
+              <span id="dynamic-badge-text">ระดับ 1: ใช้งานตามโควต้า TDEE</span>
+            </div>
+
+            <!-- Milestone Flag Mini Widget -->
+            <button onclick="switchTab('history')" title="ดูหมุดธงลดน้ำหนัก" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] font-mono hover:bg-amber-500/20 transition">
+              <span>🚩</span>
+              <span id="mini-flag-count">0 หมุด (0 kg)</span>
+            </button>
           </div>
-          <p id="dynamic-badge-sub" class="text-[11px] text-slate-400 mt-1 font-light">
+
+          <p id="dynamic-badge-sub" class="text-[11px] text-slate-400 font-light text-center">
             พลังงานยังเหลือสบายตัว กิจกรรมในเกณฑ์สมดุล
           </p>
         </div>
 
-        <!-- The Big Visual Circular Gauge (ตัวหนังสือสะอาด ไม่ล้นทับเส้นกรอบ) -->
-        <div class="flex flex-col items-center justify-center my-auto py-1">
+        <!-- The Big Visual Circular Gauge (ตัวเลขใหญ่ยุบลง-เด้งขึ้นตามแรงกด มีเสียงน้ำลด) -->
+        <div class="flex flex-col items-center justify-center my-auto py-1 relative">
+          
+          <!-- Floating Delta Anchor for Tap Animations -->
+          <div id="floating-anchor" class="absolute top-6 flex items-center justify-center pointer-events-none z-20"></div>
+
           <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
             
             <!-- SVG Progress Ring -->
@@ -360,10 +438,10 @@
                 class="dial-transition"/>
             </svg>
 
-            <!-- Center Value Display: เฉพาะตัวเลขใหญ่และหน่วย สะอาดตา ไม่ล้นกรอบ -->
+            <!-- Center Value Display: เฉพาะตัวเลขใหญ่และหน่วย ยุบลงตามแรงกด -->
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
               <span class="text-[10px] font-mono tracking-widest text-slate-400 uppercase">CALORIE REMAINING</span>
-              <div id="main-cal-display" class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1 transition-all">
+              <div id="main-cal-display" class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1 transition-all select-none">
                 3,388
               </div>
               <span class="text-xs font-mono font-bold text-slate-400 tracking-wider">KCAL</span>
@@ -371,7 +449,7 @@
           </div>
 
           <!-- ข้อมูลสถานะและระดับพลังงาน (อยู่นอกกรอบวงกลมอย่างเป็นระเบียบ ไม่ทับเส้น) -->
-          <div class="text-center mt-3 space-y-1">
+          <div class="text-center mt-2.5 space-y-1">
             <div id="tier-metric-label" class="text-xs font-mono font-bold text-emerald-400 uppercase transition-all">
               โหมด TDEE: โควต้าเต็ม 3,388 KCAL
             </div>
@@ -379,26 +457,28 @@
               ระดับพลังงานกิจกรรมประจำวัน (สูงกว่า BMR 2,186 kcal)
             </div>
             
-            <div class="flex items-center justify-center gap-5 text-xs font-mono text-slate-400 pt-1.5">
+            <div class="flex items-center justify-center gap-4 text-xs font-mono text-slate-400 pt-1">
               <div>กินไปแล้ว: <span id="eaten-cal-display" class="font-bold text-slate-200">0</span> kcal</div>
               <div class="w-1 h-1 rounded-full bg-slate-700"></div>
-              <div>สัดส่วน: <span id="percent-display" class="font-bold text-emerald-400">100%</span></div>
+              <div>คงเหลือ: <span id="percent-display" class="font-bold text-emerald-400">100%</span></div>
             </div>
           </div>
         </div>
 
-        <!-- THE TWO HUGE BIG BUTTONS (กดค้างตัวเลขจะรันเร็ว ไม่ซูมจอ) -->
-        <div class="pt-2">
-          <div class="text-[10px] font-mono text-center text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-center gap-1">
-            <span>กดแตะทีละ 50</span>
+        <!-- THE TWO HUGE BIG BUTTONS (กดค้างรันเร็ว ยุบตัวจริง สั่นหน้าจอเบาๆ เสียงเหมือนน้ำลด) -->
+        <div class="pt-1">
+          <div class="text-[10px] font-mono text-center text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5">
+            <span>แตะทีละ 50</span>
             <span>•</span>
-            <span class="text-emerald-400">กดค้างเพื่อรันตัวเลขเร็ว</span>
+            <span class="text-emerald-400">กดค้างรันเร็ว</span>
+            <span>•</span>
+            <span class="text-slate-400">เสียงน้ำลดตามระดับแคล 💧</span>
           </div>
-          <div class="grid grid-cols-2 gap-3 h-28 sm:h-32">
+          <div class="grid grid-cols-2 gap-3 h-24 sm:h-28">
             
             <!-- Left Huge Button: + 50 (กดค้างได้) -->
             <button id="btn-plus-huge"
-              class="btn-hold-active group relative bg-surface-bg hover:bg-slate-800/80 active:bg-slate-800 border-2 border-surface-border hover:border-slate-600 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden cursor-pointer select-none">
+              class="btn-tactile group relative bg-surface-bg hover:bg-slate-800/80 active:bg-slate-900 border-2 border-surface-border hover:border-slate-600 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden cursor-pointer select-none">
               <div class="text-3xl sm:text-4xl font-black font-mono text-slate-200 group-hover:text-emerald-400 transition-colors pointer-events-none">
                 +50
               </div>
@@ -407,9 +487,9 @@
               </span>
             </button>
 
-            <!-- Right Huge Button: - 50 (กดค้างได้) -->
+            <!-- Right Huge Button: - 50 (กดค้างได้ ยุบตัว มีเสียงหยดน้ำลด) -->
             <button id="btn-minus-huge"
-              class="btn-hold-active group relative bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden cursor-pointer select-none">
+              class="btn-tactile group relative bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden cursor-pointer select-none">
               <div class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-950 pointer-events-none">
                 -50
               </div>
@@ -424,7 +504,7 @@
       </section>
 
       <!-- ================= SCREEN 2: HIGH-ACCURACY THAI FOOD SEARCH ENGINE ================= -->
-      <section id="screen-search" class="space-y-4 hidden flex-1 flex flex-col">
+      <section id="screen-search" class="space-y-3.5 hidden flex-1 flex flex-col">
         
         <!-- Search Header -->
         <div class="space-y-2">
@@ -463,7 +543,81 @@
 
       </section>
 
-      <!-- ================= SCREEN 3: PROFILE & BASELINES ================= -->
+      <!-- ================= SCREEN 3: HISTORY & 1 KG PIN MILESTONES (NEW!) ================= -->
+      <section id="screen-history" class="space-y-4 hidden flex-1 flex flex-col">
+        
+        <!-- Header & Summary Dashboard -->
+        <div class="p-4 bg-surface-bg border border-surface-border rounded-2xl space-y-3.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono text-emerald-400 uppercase tracking-wider block">WEIGHT_LOSS_ENGINE</span>
+              <h2 class="text-base font-bold text-white">บันทึกประวัติ & หมุดธงลดน้ำหนัก</h2>
+            </div>
+            <button onclick="promptWakeUpReset()" class="bg-zinc-950 hover:bg-emerald-950/60 active:scale-95 border border-emerald-500/40 text-emerald-400 px-3 py-1 rounded-xl text-xs font-mono font-semibold flex items-center gap-1 shadow-sm transition">
+              <span>☀️ ตื่นนอน</span>
+            </button>
+          </div>
+
+          <!-- Total Deficit Stats Grid -->
+          <div class="grid grid-cols-3 gap-2 text-center font-mono">
+            <div class="p-2.5 bg-surface-card rounded-xl border border-surface-border">
+              <span class="text-[10px] text-slate-400 block">แคลประหยัดสะสม</span>
+              <span id="hist-total-deficit" class="text-sm sm:text-base font-bold text-emerald-400">0</span>
+              <span class="text-[9px] text-slate-500 block">kcal (Net)</span>
+            </div>
+            <div class="p-2.5 bg-surface-card rounded-xl border border-surface-border">
+              <span class="text-[10px] text-slate-400 block">ลดได้เทียบเท่า</span>
+              <span id="hist-kg-lost" class="text-sm sm:text-base font-bold text-amber-300">0.0</span>
+              <span class="text-[9px] text-slate-500 block">กิโลกรัม</span>
+            </div>
+            <div class="p-2.5 bg-surface-card rounded-xl border border-surface-border">
+              <span class="text-[10px] text-slate-400 block">หมุดธงที่ได้</span>
+              <span id="hist-flag-total" class="text-sm sm:text-base font-bold text-rose-400">0</span>
+              <span class="text-[9px] text-slate-500 block">🚩 หมุด</span>
+            </div>
+          </div>
+
+          <!-- 7,700 kcal Milestone Progress to Next Flag -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between items-center text-xs font-mono">
+              <span class="text-slate-300 flex items-center gap-1">
+                <span class="text-amber-400">🚩</span>
+                <span>สู่หมุดธงถัดไป (ครบ 7,700 kcal = ลด 1 kg)</span>
+              </span>
+              <span id="hist-progress-label" class="text-emerald-400 font-bold">0 / 7,700 kcal</span>
+            </div>
+            <div class="w-full bg-surface-card rounded-full h-2.5 border border-surface-border overflow-hidden p-0.5">
+              <div id="hist-progress-bar" class="bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between text-[10px] font-mono text-slate-500">
+              <span id="hist-progress-pct">0%</span>
+              <span id="hist-remaining-next">เหลืออีก 7,700 kcal</span>
+            </div>
+          </div>
+
+          <!-- Earned Flags Showcase -->
+          <div id="hist-flags-container" class="pt-2 border-t border-surface-border flex flex-wrap gap-2 items-center">
+            <!-- Dynamically populated flags -->
+          </div>
+        </div>
+
+        <!-- Past Records List -->
+        <div class="flex-1 flex flex-col space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-mono uppercase text-slate-400">ประวัติรอบวันที่ผ่านมา</span>
+            <button onclick="clearAllHistory()" class="text-[11px] font-mono text-slate-500 hover:text-rose-400 transition">
+              ล้างประวัติทั้งหมด
+            </button>
+          </div>
+
+          <div id="history-records-list" class="space-y-2 flex-1 overflow-y-auto pr-1 pb-6">
+            <!-- Dynamically populated history entries -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= SCREEN 4: PROFILE & BASELINES ================= -->
       <section id="screen-profile" class="space-y-4 hidden flex-1">
         <div class="p-4 bg-surface-bg border border-surface-border rounded-xl space-y-3">
           <div class="flex items-center justify-between">
@@ -533,6 +687,85 @@
 
 
   <!-- ============================================================== -->
+  <!-- 4. WAKE-UP SUMMARY MODAL ("ตื่นนอน" บันทึกรอบวัน)              -->
+  <!-- ============================================================== -->
+  <div id="modal-wakeup" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-sm bg-surface-card border border-surface-borderLight rounded-2xl p-6 text-center space-y-4 glow-green relative overflow-hidden">
+      
+      <div class="w-14 h-14 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl">
+        ☀️
+      </div>
+
+      <div class="space-y-1">
+        <h2 class="text-lg font-bold text-white">ตื่นนอน & สรุปผลรอบวัน</h2>
+        <p class="text-xs text-slate-300 font-light">
+          บันทึกผลการลดน้ำหนักรอบที่ผ่านมา และเริ่มวันใหม่เต็มพิกัด
+        </p>
+      </div>
+
+      <!-- Wakeup Summary Box -->
+      <div class="p-3.5 bg-surface-bg border border-surface-border rounded-xl space-y-2 text-xs font-mono text-left">
+        <div class="flex justify-between text-slate-400">
+          <span>โควต้าวัน (TDEE):</span>
+          <span id="wakeup-tdee-val" class="font-bold text-slate-200">2,200 kcal</span>
+        </div>
+        <div class="flex justify-between text-slate-400">
+          <span>กินไปจริงในรอบนี้:</span>
+          <span id="wakeup-eaten-val" class="font-bold text-slate-200">1,600 kcal</span>
+        </div>
+        <div class="pt-1.5 border-t border-surface-border flex justify-between items-center">
+          <span class="font-bold text-white">ผลลัพธ์รอบนี้:</span>
+          <span id="wakeup-result-badge" class="font-bold px-2 py-0.5 rounded text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+            ประหยัดได้ +600 kcal
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+        <button onclick="dismissWakeUpModal()" class="py-2.5 bg-surface-bg hover:bg-slate-800 text-slate-300 border border-surface-border rounded-xl transition">
+          ยกเลิก
+        </button>
+        <button onclick="confirmWakeUpReset()" class="py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition shadow-lg shadow-emerald-500/25">
+          บันทึก & เริ่มวันใหม่
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- 5. MILESTONE CELEBRATION MODAL (ปลดล็อกหมุดธง 1 KG)           -->
+  <!-- ============================================================== -->
+  <div id="modal-milestone" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-sm bg-surface-card border-2 border-amber-500/50 rounded-2xl p-6 text-center space-y-4 shadow-2xl relative overflow-hidden">
+      
+      <div class="text-5xl flag-animate py-2">
+        🚩
+      </div>
+
+      <div class="space-y-1.5">
+        <span class="text-[10px] font-mono text-amber-400 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 uppercase">
+          1 KG MILESTONE UNLOCKED
+        </span>
+        <h2 class="text-xl font-bold text-white">ปักหมุดธงสำเร็จ!</h2>
+        <p id="milestone-modal-desc" class="text-xs text-slate-300 font-light leading-relaxed">
+          ยอด Calorie Deficit สะสมครบ 7,700 kcal เทียบเท่าไขมันลดลง 1 กิโลกรัมเต็ม!
+        </p>
+      </div>
+
+      <div class="p-3 bg-surface-bg border border-amber-500/30 rounded-xl font-mono text-xs text-amber-300 flex items-center justify-center gap-2">
+        <span class="text-base">🏆</span>
+        <span id="milestone-badge-text">หมุดธงที่ 1 ปักสำเร็จแล้ว (-1.0 KG)</span>
+      </div>
+
+      <button onclick="dismissMilestoneModal()" class="w-full py-3 bg-gradient-to-r from-amber-400 to-emerald-400 hover:brightness-110 text-slate-950 font-bold text-xs tracking-wider uppercase rounded-xl transition shadow-lg shadow-amber-500/20 font-mono">
+        รับหมุดธง & ลุยต่อ! 🚩
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
   <!-- TOAST NOTIFICATION                                             -->
   <!-- ============================================================== -->
   <div id="toast" class="fixed top-5 z-50 transform -translate-y-16 opacity-0 transition-all duration-300 pointer-events-none px-4 py-2.5 rounded-xl bg-surface-card border border-emerald-500/40 text-emerald-300 font-mono text-xs shadow-2xl flex items-center gap-2">
@@ -542,7 +775,136 @@
 
   <script>
     // ==============================================================
-    // 1. HIGH-ACCURACY THAI FOOD & COOKING METHOD MATRIX
+    // 1. PURE WEB AUDIO API SOUND ENGINE (WATER DRAINING EFFECT)
+    // ==============================================================
+    const SoundEngine = {
+      ctx: null,
+      muted: localStorage.getItem('calcounting_muted') === '1',
+
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            this.ctx = new AudioContextClass();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+
+      toggle() {
+        this.muted = !this.muted;
+        localStorage.setItem('calcounting_muted', this.muted ? '1' : '0');
+        return this.muted;
+      },
+
+      // Water draining glug sound: pitch dynamically drops as remaining calories drain!
+      playWaterDrain(ratio) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          // Clamp ratio between 0.05 and 1.0
+          const clamped = Math.max(0.05, Math.min(1.0, ratio));
+          // Full water = 620Hz, empty = 170Hz
+          const baseFreq = 160 + (clamped * 460);
+
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const filter = this.ctx.createBiquadFilter();
+
+          osc.type = 'sine';
+          // Aquatic downward sweep mimics glug / droplet pop
+          osc.frequency.setValueAtTime(baseFreq * 1.35, now);
+          osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.72, now + 0.085);
+
+          // Liquid resonance filter
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(baseFreq * 2.6, now);
+          filter.Q.setValueAtTime(3.2, now);
+
+          // Envelope
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.32, now + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } catch (e) {}
+      },
+
+      // Subtle upward tone for plus/undo
+      playPlusTone() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(360, now);
+          osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
+
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.18, now + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } catch (e) {}
+      },
+
+      // Fanfare on milestone flag unlock
+      playMilestoneFanfare() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const notes = [392, 523.25, 659.25, 783.99]; // G4, C5, E5, G5
+          notes.forEach((freq, idx) => {
+            const startT = this.ctx.currentTime + (idx * 0.09);
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startT);
+
+            gain.gain.setValueAtTime(0.001, startT);
+            gain.gain.linearRampToValueAtTime(0.28, startT + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.32);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(startT);
+            osc.stop(startT + 0.33);
+          });
+        } catch (e) {}
+      }
+    };
+
+    function toggleSound() {
+      const isMuted = SoundEngine.toggle();
+      document.getElementById('sound-icon').innerText = isMuted ? '🔇' : '🔊';
+      showToast(isMuted ? 'ปิดเสียงเอฟเฟกต์แล้ว' : 'เปิดเสียงเอฟเฟกต์น้ำลดแล้ว');
+    }
+
+    // ==============================================================
+    // 2. HIGH-ACCURACY THAI FOOD & COOKING METHOD MATRIX
     // ==============================================================
     const THAI_FOOD_DATABASE = [
       // ปิ้ง / ย่าง
@@ -595,11 +957,11 @@
     ];
 
     // ==============================================================
-    // 2. USER PROFILE & CASE-INSENSITIVE AUTH STATE
+    // 3. STORAGE & STATE MANAGEMENT
     // ==============================================================
     function getStoredUser() {
       try {
-        const u = localStorage.getItem('caltrack_user');
+        const u = localStorage.getItem('calcounting_user') || localStorage.getItem('caltrack_user');
         return u ? JSON.parse(u) : null;
       } catch (e) {
         return null;
@@ -607,47 +969,113 @@
     }
 
     function saveStoredUser(userData) {
-      localStorage.setItem('caltrack_user', JSON.stringify(userData));
+      localStorage.setItem('calcounting_user', JSON.stringify(userData));
     }
 
-    // Favorite foods persistence
     function getStoredFavorites() {
       try {
-        const fav = localStorage.getItem('caltrack_favorites');
-        return fav ? JSON.parse(fav) : [1, 8, 14, 33]; // default favorites: หมูย่าง, หมูทอด, ต้มเล้ง, กาแฟดำ
+        const fav = localStorage.getItem('calcounting_favorites') || localStorage.getItem('caltrack_favorites');
+        return fav ? JSON.parse(fav) : [1, 8, 14, 33];
       } catch (e) {
         return [1, 8, 14, 33];
       }
     }
 
     function saveStoredFavorites(favList) {
-      localStorage.setItem('caltrack_favorites', JSON.stringify(favList));
+      localStorage.setItem('calcounting_favorites', JSON.stringify(favList));
+    }
+
+    // History Records (รอบวันตื่นนอนสำหรับคนลดน้ำหนัก)
+    function getStoredHistory() {
+      if (!currentUser) return [];
+      const userKey = currentUser.username.toLowerCase();
+      try {
+        const h = localStorage.getItem(`calcounting_history_${userKey}`);
+        return h ? JSON.parse(h) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveStoredHistory(historyList) {
+      if (!currentUser) return;
+      const userKey = currentUser.username.toLowerCase();
+      localStorage.setItem(`calcounting_history_${userKey}`, JSON.stringify(historyList));
     }
 
     let currentUser = getStoredUser();
     let favoriteIds = getStoredFavorites();
 
-    // Today's balance persistence
-    function getTodayBalance() {
+    // Current Wake-up cycle balance persistence
+    function getCycleBalance() {
       if (!currentUser) return 2200;
-      const todayStr = new Date().toDateString();
+      const userKey = currentUser.username.toLowerCase();
       try {
-        const stored = localStorage.getItem(`caltrack_dial_${currentUser.username.toLowerCase()}_${todayStr}`);
+        const stored = localStorage.getItem(`calcounting_current_cycle_${userKey}`);
         if (stored !== null) return parseInt(stored, 10);
       } catch (e) {}
       return currentUser.tdee || 2200;
     }
 
-    function saveTodayBalance(val) {
+    function saveCycleBalance(val) {
       if (!currentUser) return;
-      const todayStr = new Date().toDateString();
-      localStorage.setItem(`caltrack_dial_${currentUser.username.toLowerCase()}_${todayStr}`, val.toString());
+      const userKey = currentUser.username.toLowerCase();
+      localStorage.setItem(`calcounting_current_cycle_${userKey}`, val.toString());
     }
 
     let currentBalance = 2200;
 
     // ==============================================================
-    // 3. 3-TIER DYNAMIC LEVEL & COLOR LOGIC
+    // 4. TACTILE SENSORY SYSTEM & FLOATING CHIP
+    // ==============================================================
+    function triggerSensoryImpact(amount, isRapid = false) {
+      const app = document.getElementById('app-container');
+      const numDisplay = document.getElementById('main-cal-display');
+      const anchor = document.getElementById('floating-anchor');
+      const tdee = currentUser ? currentUser.tdee : 2200;
+
+      // 1. Mobile haptic vibration
+      if (navigator.vibrate) {
+        navigator.vibrate(isRapid ? 8 : 16);
+      }
+
+      // 2. Screen micro-shake
+      if (!isRapid || Math.random() > 0.4) {
+        app.classList.remove('shake-screen');
+        void app.offsetWidth;
+        app.classList.add('shake-screen');
+      }
+
+      // 3. Big number bounce / depression
+      numDisplay.classList.remove('number-bounce');
+      void numDisplay.offsetWidth;
+      numDisplay.classList.add('number-bounce');
+
+      // 4. Web Audio Water sound effect
+      if (amount < 0) {
+        const ratio = currentBalance / tdee;
+        SoundEngine.playWaterDrain(ratio);
+      } else {
+        SoundEngine.playPlusTone();
+      }
+
+      // 5. Floating Chip
+      if (!isRapid || Math.random() > 0.5) {
+        const chip = document.createElement('div');
+        const isMinus = amount < 0;
+        chip.className = `floating-chip font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border shadow-lg ${
+          isMinus 
+            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
+            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+        }`;
+        chip.innerText = isMinus ? `${amount} kcal` : `+${amount} kcal`;
+        anchor.appendChild(chip);
+        setTimeout(() => chip.remove(), 620);
+      }
+    }
+
+    // ==============================================================
+    // 5. 3-TIER DYNAMIC LEVEL & COLOR LOGIC
     // ==============================================================
     function renderDialUI() {
       if (!currentUser) return;
@@ -687,65 +1115,68 @@
       if (bal >= bmr) {
         // TIER 1: GREEN (TDEE ZONE)
         circle.setAttribute('stroke', '#10b981');
-        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1';
+        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1 select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-emerald-400 uppercase';
         tierMetric.innerText = `โหมด TDEE: โควต้าเต็ม ${tdee.toLocaleString()} KCAL`;
         tierSecondary.innerText = `ระดับพลังงานกิจกรรมประจำวัน (สูงกว่า BMR ${bmr.toLocaleString()} kcal)`;
 
-        badgeBox.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-        badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        badgeBox.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
         badgeText.innerText = 'ระดับ 1: ใช้งานตามโควต้า TDEE';
         badgeSub.innerText = 'พลังงานยังเหลือสบายตัว กิจกรรมในเกณฑ์สมดุล';
 
-        minusBtn.className = 'btn-hold-active group relative bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden cursor-pointer select-none';
+        minusBtn.className = 'btn-tactile group relative bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden cursor-pointer select-none';
       } 
       else if (bal > 300 && bal < bmr) {
         // TIER 2: ORANGE (BMR ZONE)
         circle.setAttribute('stroke', '#f59e0b');
-        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-amber-300 my-1';
+        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-amber-300 my-1 select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-amber-400 uppercase';
         tierMetric.innerText = `โหมด BMR: แตะเส้นพลังงานพื้นฐาน`;
         tierSecondary.innerText = `ระดับการเผาผลาญเพื่ออวัยวะภายใน (${bmr.toLocaleString()} kcal)`;
 
-        badgeBox.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-amber-500/10 text-amber-400 border-amber-500/30';
-        badgeDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        badgeBox.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-amber-500/10 text-amber-400 border-amber-500/30';
+        badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
         badgeText.innerText = 'ระดับ 2: กำลังพอดี (ใกล้ถึงขีด BMR)';
         badgeSub.innerText = 'พลังงานเริ่มลดลงสู่ระดับพื้นฐาน เหมาะกับมื้อเบาๆ';
 
-        minusBtn.className = 'btn-hold-active group relative bg-amber-500 hover:bg-amber-400 active:bg-amber-600 border-2 border-amber-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-amber-500/20 text-slate-950 overflow-hidden cursor-pointer select-none';
+        minusBtn.className = 'btn-tactile group relative bg-amber-500 hover:bg-amber-400 active:bg-amber-600 border-2 border-amber-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-amber-500/20 text-slate-950 overflow-hidden cursor-pointer select-none';
       } 
       else {
         // TIER 3: RED (CRITICAL / DEFICIT / BMI IMPACT)
         circle.setAttribute('stroke', '#ef4444');
-        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-rose-400 my-1 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]';
+        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-rose-400 my-1 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-rose-400 uppercase';
         
         if (bal <= 0) {
           tierMetric.innerText = `เกินโควต้าประจำวัน: ติดลบ ${Math.abs(bal)} kcal!`;
           tierSecondary.innerText = `ส่งผลต่อดัชนี BMI (${bmi}) และการสะสมไขมันส่วนเกิน`;
-          badgeText.innerText = 'ระดับ 3: เกินเพดาน TDEE ของวันแล้ว!';
+          badgeText.innerText = 'ระดับ 3: เกินเพดาน TDEE ของรอบนี้แล้ว!';
         } else {
           tierMetric.innerText = `โหมดเตือน BMI: แคลอรี่ใกล้หมด`;
           tierSecondary.innerText = `ต่ำกว่าขีด BMR (${bmr}) เข้าสู่ช่วง Calorie Deficit เข้มงวด`;
           badgeText.innerText = 'ระดับ 3: แคลใกล้หมดโควต้า!';
         }
 
-        badgeBox.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-rose-500/10 text-rose-400 border-rose-500/30 glow-red';
-        badgeDot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-ping';
+        badgeBox.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-rose-500/10 text-rose-400 border-rose-500/30 glow-red';
+        badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping';
         badgeSub.innerText = 'ระวังการรับประทานมื้อดึกเกินความจำเป็น';
 
-        minusBtn.className = 'btn-hold-active group relative bg-rose-500 hover:bg-rose-400 active:bg-rose-600 border-2 border-rose-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-rose-500/30 text-white overflow-hidden cursor-pointer select-none';
+        minusBtn.className = 'btn-tactile group relative bg-rose-500 hover:bg-rose-400 active:bg-rose-600 border-2 border-rose-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-rose-500/30 text-white overflow-hidden cursor-pointer select-none';
       }
+
+      updateMiniFlagBadge();
     }
 
-    function adjustCalorie(amount) {
+    function adjustCalorie(amount, isRapid = false) {
       currentBalance += amount;
-      saveTodayBalance(currentBalance);
+      saveCycleBalance(currentBalance);
+      triggerSensoryImpact(amount, isRapid);
       renderDialUI();
     }
 
     // ==============================================================
-    // 4. PRESS-AND-HOLD RAPID FAST RUN FUNCTIONALITY
+    // 6. PRESS-AND-HOLD RAPID FAST RUN FUNCTIONALITY
     // ==============================================================
     function setupHoldButton(buttonId, amount) {
       const btn = document.getElementById(buttonId);
@@ -756,22 +1187,21 @@
       let isHolding = false;
 
       const startHold = (e) => {
-        // Prevent right clicks or gestures
         if (e.button && e.button !== 0) return;
         e.preventDefault();
         isHolding = true;
 
-        // Immediate single tap
-        adjustCalorie(amount);
+        // Immediate tap
+        adjustCalorie(amount, false);
 
-        // After 280ms, begin rapid repeating
+        // Hold start
         holdTimeout = setTimeout(() => {
-          let stepDelay = 70; // 70ms per 50 kcal step
+          let stepDelay = 70;
           repeatInterval = setInterval(() => {
             if (!isHolding) return;
-            adjustCalorie(amount);
+            adjustCalorie(amount, true);
           }, stepDelay);
-        }, 280);
+        }, 260);
       };
 
       const endHold = (e) => {
@@ -787,37 +1217,230 @@
       btn.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
-    function resetTodayBalance() {
-      if (confirm('ต้องการรีเซ็ตยอดแคลอรี่กลับสู่โควต้าเต็มวัน?')) {
-        currentBalance = currentUser ? currentUser.tdee : 2200;
-        saveTodayBalance(currentBalance);
-        renderDialUI();
-        showToast('รีเซ็ตยอดกลับสู่โควต้าเต็มเรียบร้อย');
-      }
-    }
-
     function deductMenuCalorie(name, cal) {
-      currentBalance -= cal;
-      saveTodayBalance(currentBalance);
-      renderDialUI();
-      showToast(`หักยอด ${name} (-${cal} kcal) เข้าหน้าหลักแล้ว!`);
+      adjustCalorie(-cal, false);
+      showToast(`หักยอด ${name} (-${cal} kcal) เรียบร้อย!`);
       switchTab('dial');
     }
 
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      const txt = document.getElementById('toast-text');
-      txt.innerText = msg;
-      toast.classList.remove('opacity-0', '-translate-y-16');
-      toast.classList.add('opacity-100', 'translate-y-0');
-      setTimeout(() => {
-        toast.classList.remove('opacity-100', 'translate-y-0');
-        toast.classList.add('opacity-0', '-translate-y-16');
-      }, 2500);
+    // ==============================================================
+    // 7. WAKE-UP RESET & HISTORY CYCLE LOGIC (ปุ่ม "ตื่นนอน")
+    // ==============================================================
+    function promptWakeUpReset() {
+      if (!currentUser) return;
+      const tdee = currentUser.tdee || 2200;
+      const eaten = Math.max(0, tdee - currentBalance);
+      const diff = currentBalance; // Positive = Deficit; Negative = Surplus
+
+      document.getElementById('wakeup-tdee-val').innerText = `${tdee.toLocaleString()} kcal`;
+      document.getElementById('wakeup-eaten-val').innerText = `${eaten.toLocaleString()} kcal`;
+
+      const badge = document.getElementById('wakeup-result-badge');
+      if (diff > 0) {
+        badge.className = 'font-bold px-2 py-0.5 rounded text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+        badge.innerText = `ประหยัดได้ +${diff.toLocaleString()} kcal (Deficit 🔥)`;
+      } else if (diff < 0) {
+        badge.className = 'font-bold px-2 py-0.5 rounded text-xs bg-rose-500/20 text-rose-400 border border-rose-500/40';
+        badge.innerText = `กินเกินโควต้า ${diff.toLocaleString()} kcal (Surplus)`;
+      } else {
+        badge.className = 'font-bold px-2 py-0.5 rounded text-xs bg-slate-500/20 text-slate-300 border border-slate-500/40';
+        badge.innerText = `พอดีเป๊ะ 0 kcal`;
+      }
+
+      document.getElementById('modal-wakeup').classList.remove('hidden');
+    }
+
+    function dismissWakeUpModal() {
+      document.getElementById('modal-wakeup').classList.add('hidden');
+    }
+
+    function confirmWakeUpReset() {
+      if (!currentUser) return;
+      dismissWakeUpModal();
+
+      const history = getStoredHistory();
+      const oldNetDeficit = calculateNetDeficit(history);
+      const oldPins = Math.floor(Math.max(0, oldNetDeficit) / 7700);
+
+      const tdee = currentUser.tdee || 2200;
+      const eaten = Math.max(0, tdee - currentBalance);
+      const deficit = currentBalance; // Remaining balance is deficit
+
+      const now = new Date();
+      const record = {
+        id: Date.now(),
+        dateStr: now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }),
+        timeStr: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+        tdee,
+        eaten,
+        deficit,
+        status: deficit > 0 ? 'deficit' : (deficit < 0 ? 'surplus' : 'exact')
+      };
+
+      history.unshift(record);
+      saveStoredHistory(history);
+
+      // Check if a new 1 kg pin was reached!
+      const newNetDeficit = calculateNetDeficit(history);
+      const newPins = Math.floor(Math.max(0, newNetDeficit) / 7700);
+
+      // Reset balance to full TDEE for the new day
+      currentBalance = tdee;
+      saveCycleBalance(currentBalance);
+      renderDialUI();
+      renderHistoryScreen();
+
+      if (newPins > oldPins) {
+        // Trigger 1 KG MILESTONE UNLOCK MODAL!
+        showMilestoneCelebration(newPins);
+      } else {
+        showToast('☀️ ตื่นนอนเริ่มวันใหม่! บันทึกประวัติรอบก่อนเรียบร้อย');
+      }
     }
 
     // ==============================================================
-    // 5. PRECISION FOOD SEARCH ENGINE WITH FAVORITE STAR SORTING
+    // 8. 1 KG (7,700 KCAL) MILESTONE PIN SYSTEM
+    // ==============================================================
+    function calculateNetDeficit(history) {
+      if (!history || history.length === 0) return 0;
+      return history.reduce((sum, item) => sum + (item.deficit || 0), 0);
+    }
+
+    function updateMiniFlagBadge() {
+      const history = getStoredHistory();
+      const netDeficit = calculateNetDeficit(history);
+      const pins = Math.floor(Math.max(0, netDeficit) / 7700);
+      const badge = document.getElementById('mini-flag-count');
+      if (badge) {
+        badge.innerText = `${pins} หมุด (${pins} kg)`;
+      }
+    }
+
+    function showMilestoneCelebration(pinCount) {
+      SoundEngine.playMilestoneFanfare();
+      document.getElementById('milestone-badge-text').innerText = `หมุดธงที่ ${pinCount} ปักสำเร็จแล้ว (-${pinCount}.0 KG)`;
+      document.getElementById('milestone-modal-desc').innerText = `ยินดีด้วยอย่างยิ่ง! ยอด Calorie Deficit สะสมของคุณถึงเกณฑ์ ${ (pinCount * 7700).toLocaleString() } kcal เท่ากับลดน้ำหนักได้ ${pinCount} กิโลกรัมเต็ม!`;
+      document.getElementById('modal-milestone').classList.remove('hidden');
+    }
+
+    function dismissMilestoneModal() {
+      document.getElementById('modal-milestone').classList.add('hidden');
+      switchTab('history');
+    }
+
+    function renderHistoryScreen() {
+      const history = getStoredHistory();
+      const netDeficit = calculateNetDeficit(history);
+      const kgLost = (Math.max(0, netDeficit) / 7700).toFixed(1);
+      const pinsCount = Math.floor(Math.max(0, netDeficit) / 7700);
+
+      // Milestone progress calculation
+      const progressInCurrentPin = Math.max(0, netDeficit % 7700);
+      const pct = Math.min(100, Math.round((progressInCurrentPin / 7700) * 100));
+      const remainingNext = Math.max(0, 7700 - progressInCurrentPin);
+
+      // DOM updates
+      document.getElementById('hist-total-deficit').innerText = (netDeficit > 0 ? '+' : '') + netDeficit.toLocaleString();
+      document.getElementById('hist-kg-lost').innerText = kgLost;
+      document.getElementById('hist-flag-total').innerText = pinsCount;
+
+      document.getElementById('hist-progress-label').innerText = `${progressInCurrentPin.toLocaleString()} / 7,700 kcal`;
+      document.getElementById('hist-progress-bar').style.width = `${pct}%`;
+      document.getElementById('hist-progress-pct').innerText = `${pct}% สู่หมุดที่ ${pinsCount + 1}`;
+      document.getElementById('hist-remaining-next').innerText = `เหลืออีก ${remainingNext.toLocaleString()} kcal`;
+
+      // Render Flags
+      const flagsContainer = document.getElementById('hist-flags-container');
+      if (pinsCount === 0) {
+        flagsContainer.innerHTML = `
+          <div class="text-[11px] font-mono text-slate-500 py-1">
+            ยังไม่มีหมุดธง • สะสม Calorie Deficit ครบ 7,700 kcal เพื่อปักหมุดแรก (-1 kg)!
+          </div>
+        `;
+      } else {
+        let flagBadges = '';
+        for (let i = 1; i <= pinsCount; i++) {
+          flagBadges += `
+            <div class="px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-xs flex items-center gap-1.5 shadow-sm">
+              <span class="text-sm">🚩</span>
+              <span class="font-bold">หมุดที่ ${i}</span>
+              <span class="text-[10px] text-amber-400">(-${i} kg)</span>
+            </div>
+          `;
+        }
+        flagsContainer.innerHTML = flagBadges;
+      }
+
+      // Render History Records
+      const recordsList = document.getElementById('history-records-list');
+      if (history.length === 0) {
+        recordsList.innerHTML = `
+          <div class="text-center py-12 text-slate-500 text-xs font-mono space-y-2">
+            <div>NO_HISTORY_LOGGED // ยังไม่มีประวัติรอบวัน</div>
+            <div class="text-[11px] text-slate-600 max-w-xs mx-auto leading-relaxed">
+              เมื่อหมดวันหรือตื่นนอน ให้กดปุ่ม <span class="text-emerald-400 font-bold">"☀️ ตื่นนอน"</span> ที่มุมบนขวา เพื่อปิดรอบและบันทึกสถิติ
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      recordsList.innerHTML = history.map((rec) => {
+        const isDeficit = rec.deficit > 0;
+        const isSurplus = rec.deficit < 0;
+
+        return `
+          <div class="p-3 bg-surface-bg border border-surface-border hover:border-slate-700 rounded-xl flex items-center justify-between text-xs transition">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-100 font-mono">${rec.dateStr}</span>
+                <span class="text-[10px] text-slate-500 font-mono">${rec.timeStr} น.</span>
+                ${isDeficit ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">DEFICIT</span>' : ''}
+                ${isSurplus ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30">SURPLUS</span>' : ''}
+              </div>
+              <div class="text-[10px] text-slate-400 font-mono">
+                โควต้า: ${rec.tdee.toLocaleString()} | กินไป: ${rec.eaten.toLocaleString()} kcal
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <div class="font-mono font-bold text-sm ${isDeficit ? 'text-emerald-400' : (isSurplus ? 'text-rose-400' : 'text-slate-300')}">
+                  ${isDeficit ? '+' : ''}${rec.deficit.toLocaleString()}
+                </div>
+                <div class="text-[9px] text-slate-500 font-mono">${isDeficit ? 'ประหยัดได้' : (isSurplus ? 'กินเกิน' : 'พอดี')}</div>
+              </div>
+              <button onclick="deleteHistoryRecord(${rec.id})" title="ลบรายการนี้" class="text-slate-600 hover:text-rose-400 p-1 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function deleteHistoryRecord(id) {
+      if (confirm('ต้องการลบประวัติรอบนี้หรือไม่?')) {
+        let history = getStoredHistory();
+        history = history.filter(item => item.id !== id);
+        saveStoredHistory(history);
+        renderHistoryScreen();
+        updateMiniFlagBadge();
+        showToast('ลบรายการประวัติแล้ว');
+      }
+    }
+
+    function clearAllHistory() {
+      if (confirm('ต้องการล้างประวัติรอบวันทั้งหมดหรือไม่? (หมุดธงจะถูกคำนวณใหม่)')) {
+        saveStoredHistory([]);
+        renderHistoryScreen();
+        updateMiniFlagBadge();
+        showToast('ล้างประวัติทั้งหมดเรียบร้อย');
+      }
+    }
+
+    // ==============================================================
+    // 9. PRECISION FOOD SEARCH ENGINE WITH FAVORITE STAR SORTING
     // ==============================================================
     let currentCategory = 'all';
     let searchQuery = '';
@@ -925,27 +1548,31 @@
     }
 
     // ==============================================================
-    // 6. NAVIGATION & TAB SWITCHING
+    // 10. NAVIGATION & TAB SWITCHING
     // ==============================================================
     function switchTab(tabId) {
-      const tabs = ['dial', 'search', 'profile'];
+      const tabs = ['dial', 'search', 'history', 'profile'];
       tabs.forEach(t => {
-        document.getElementById(`screen-${t}`).classList.add('hidden');
+        const sec = document.getElementById(`screen-${t}`);
+        if (sec) sec.classList.add('hidden');
         const navBtn = document.getElementById(`nav-${t}`);
-        navBtn.className = 'nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-slate-400 hover:text-slate-200 transition';
+        if (navBtn) navBtn.className = 'nav-item flex-1 py-1.5 flex items-center justify-center gap-1 rounded-xl text-slate-400 hover:text-slate-200 transition text-[11px] sm:text-xs';
       });
 
-      document.getElementById(`screen-${tabId}`).classList.remove('hidden');
+      const targetScreen = document.getElementById(`screen-${tabId}`);
+      if (targetScreen) targetScreen.classList.remove('hidden');
+
       const activeNav = document.getElementById(`nav-${tabId}`);
-      activeNav.className = 'nav-item flex-1 py-1.5 flex items-center justify-center gap-1.5 rounded-xl text-emerald-400 bg-surface-bg font-semibold border border-surface-border transition';
+      if (activeNav) activeNav.className = 'nav-item flex-1 py-1.5 flex items-center justify-center gap-1 rounded-xl text-emerald-400 bg-surface-bg font-semibold border border-surface-border transition text-[11px] sm:text-xs';
 
       if (tabId === 'dial') renderDialUI();
       if (tabId === 'search') renderFoodSearchList();
+      if (tabId === 'history') renderHistoryScreen();
       if (tabId === 'profile') updateProfileBaselines();
     }
 
     // ==============================================================
-    // 7. AUTH & ONBOARDING HANDLERS (CASE-INSENSITIVE + NUMERIC KEYBOARD)
+    // 11. AUTH & ONBOARDING HANDLERS (CASE-INSENSITIVE + NUMERIC KEYBOARD)
     // ==============================================================
     function setAuthMode(mode) {
       const formReg = document.getElementById('form-register');
@@ -988,7 +1615,7 @@
     function handleRegister(e) {
       e.preventDefault();
       const rawUsername = document.getElementById('reg-username').value.trim();
-      const username = rawUsername.toLowerCase(); // Case-insensitive!
+      const username = rawUsername.toLowerCase();
       const pin = document.getElementById('reg-pin').value.trim();
       const pinConfirm = document.getElementById('reg-pin-confirm').value.trim();
       const age = parseFloat(document.getElementById('reg-age').value) || 26;
@@ -1006,8 +1633,8 @@
       const tdee = Math.round(bmr * activity);
 
       const newUser = {
-        username: rawUsername, // Display username
-        usernameKey: username, // Case-insensitive key
+        username: rawUsername,
+        usernameKey: username,
         pin,
         age,
         height,
@@ -1022,7 +1649,7 @@
       saveStoredUser(newUser);
       currentUser = newUser;
       currentBalance = tdee;
-      saveTodayBalance(currentBalance);
+      saveCycleBalance(currentBalance);
 
       showSuccessModal(newUser);
     }
@@ -1040,7 +1667,6 @@
         return;
       }
 
-      // Case-insensitive username check
       const savedKey = (saved.usernameKey || saved.username || '').toLowerCase();
       if (savedKey === inputUsername && saved.pin === pin) {
         currentUser = saved;
@@ -1104,9 +1730,12 @@
         document.getElementById('profile-activity').value = currentUser.activity || 1.55;
       }
 
-      currentBalance = getTodayBalance();
+      document.getElementById('sound-icon').innerText = SoundEngine.muted ? '🔇' : '🔊';
+
+      currentBalance = getCycleBalance();
       updateProfileBaselines();
       renderDialUI();
+      renderHistoryScreen();
       switchTab('dial');
 
       // Bind hold-to-repeat buttons
@@ -1161,6 +1790,18 @@
       } else {
         alert('รูปแบบ PIN ไม่ถูกต้อง');
       }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const txt = document.getElementById('toast-text');
+      txt.innerText = msg;
+      toast.classList.remove('opacity-0', '-translate-y-16');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-16');
+      }, 2500);
     }
 
     // App Initializer
