@@ -183,24 +183,23 @@
     <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4">
       <div class="space-y-3">
         <div class="space-y-1">
-          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 flex justify-between">
-            <span>ชื่อผู้ใช้ (USERNAME)</span>
-            <span class="text-emerald-400">ไม่แยกตัวพิมพ์เล็กใหญ่</span>
+          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 block">
+            ชื่อผู้ใช้
           </label>
-          <input type="text" id="reg-username" required placeholder="ระบุชื่อผู้ใช้ (ภาษาอังกฤษ)"
+          <input type="text" id="reg-username" required placeholder="ชื่อผู้ใช้"
             autocapitalize="none" autocomplete="username" spellcheck="false"
             class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono transition">
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div class="space-y-1">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300">รหัส PIN (4-6 หลัก)</label>
-            <input type="password" id="reg-pin" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="ตัวเลข 4-6 หลัก"
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 block">รหัส PIN</label>
+            <input type="password" id="reg-pin" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="PIN"
               class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono text-center tracking-widest transition">
           </div>
           <div class="space-y-1">
-            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300">ยืนยัน PIN</label>
-            <input type="password" id="reg-pin-confirm" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="ยืนยัน PIN อีกครั้ง"
+            <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 block">ยืนยัน PIN</label>
+            <input type="password" id="reg-pin-confirm" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="ยืนยัน PIN"
               class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono text-center tracking-widest transition">
           </div>
         </div>
@@ -269,20 +268,18 @@
     <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4 hidden">
       <div class="space-y-3">
         <div class="space-y-1">
-          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 flex justify-between">
-            <span>ชื่อผู้ใช้ (USERNAME)</span>
-            <span class="text-slate-500 text-[10px]">ตัวพิมพ์เล็ก/ใหญ่มีค่าเท่ากัน</span>
+          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 block">
+            ชื่อผู้ใช้
           </label>
           <input type="text" id="login-username" required placeholder="ชื่อผู้ใช้"
             autocapitalize="none" autocomplete="username" spellcheck="false"
             class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono transition">
         </div>
         <div class="space-y-1">
-          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 flex justify-between">
-            <span>รหัส PIN</span>
-            <span class="text-emerald-400 text-[10px]">แป้นตัวเลข</span>
+          <label class="text-[11px] font-mono uppercase tracking-wider text-slate-300 block">
+            รหัส PIN
           </label>
-          <input type="password" id="login-pin" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="รหัส PIN ตัวเลข"
+          <input type="password" id="login-pin" required maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="PIN"
             class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-600 font-mono text-center tracking-widest transition">
         </div>
       </div>
