@@ -149,12 +149,12 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-0 sm:p-4 selection:bg-emerald-500/20 selection:text-emerald-300">
+<body class="h-[100dvh] sm:h-auto sm:min-h-screen overflow-hidden sm:overflow-y-auto flex items-center justify-center p-0 sm:p-4 selection:bg-emerald-500/20 selection:text-emerald-300">
 
   <!-- ============================================================== -->
   <!-- 1. AUTH GATE (REGISTER / LOGIN)                                -->
   <!-- ============================================================== -->
-  <div id="auth-container" class="w-full max-w-md bg-surface-card border-y sm:border border-surface-border rounded-none sm:rounded-2xl shadow-2xl overflow-hidden p-6 relative transition-all">
+  <div id="auth-container" class="w-full max-w-md bg-surface-card border-y sm:border border-surface-border rounded-none sm:rounded-2xl shadow-2xl overflow-y-auto max-h-[100dvh] p-6 relative transition-all">
     <div class="text-center space-y-3 mb-6">
       <!-- Minimalist App Logo Badge (ไม่เอไอ มินิมอล เวกเตอร์แท้) -->
       <div class="w-14 h-14 mx-auto rounded-2xl bg-zinc-950 border border-emerald-500/30 flex items-center justify-center shadow-xl shadow-emerald-950/40">
@@ -351,7 +351,7 @@
   <!-- ============================================================== -->
   <!-- 3. MAIN APPLICATION CONTAINER (WITH STICKY TOP NAVIGATION)     -->
   <!-- ============================================================== -->
-  <div id="app-container" class="w-full max-w-md bg-surface-card border-x sm:border border-surface-border rounded-none sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden min-h-screen sm:min-h-[740px] relative hidden transition-transform">
+  <div id="app-container" class="w-full max-w-md bg-surface-card border-x sm:border border-surface-border rounded-none sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden h-[100dvh] max-h-[100dvh] relative hidden transition-transform">
     
     <!-- Top Header Bar -->
     <header class="px-4 pt-3.5 pb-2.5 border-b border-surface-border flex items-center justify-between bg-surface-card shrink-0">
@@ -419,15 +419,15 @@
     </nav>
 
     <!-- Main Screens Viewport -->
-    <main class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col justify-between relative space-y-3">
+    <main class="flex-1 overflow-y-auto px-3.5 py-2 sm:p-5 flex flex-col justify-between relative space-y-1.5 sm:space-y-3">
 
       <!-- ================= SCREEN 1: THE BIG CALORIE DIAL ================= -->
-      <section id="screen-dial" class="flex-1 flex flex-col justify-between space-y-2">
+      <section id="screen-dial" class="flex-1 flex flex-col justify-between space-y-1.5 sm:space-y-2 h-full overflow-hidden">
         
         <!-- Status Pill & Milestone Mini Bar -->
-        <div class="space-y-1.5 pt-0.5">
+        <div class="space-y-1 pt-0.5 shrink-0">
           <div class="flex items-center justify-between">
-            <div id="dynamic-mode-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold transition-all border">
+            <div id="dynamic-mode-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-semibold transition-all border">
               <span id="dynamic-badge-dot" class="w-1.5 h-1.5 rounded-full animate-ping"></span>
               <span id="dynamic-badge-text">ระดับ 1: ใช้งานตามโควต้า TDEE</span>
             </div>
@@ -439,25 +439,25 @@
             </button>
           </div>
 
-          <p id="dynamic-badge-sub" class="text-[11px] text-slate-400 font-light text-center">
+          <p id="dynamic-badge-sub" class="text-[10px] sm:text-[11px] text-slate-400 font-light text-center">
             พลังงานยังเหลือสบายตัว กิจกรรมในเกณฑ์สมดุล
           </p>
         </div>
 
         <!-- The Big Visual Circular Gauge (ตัวเลขใหญ่ยุบลง-เด้งขึ้นตามแรงกด มีเสียงน้ำลด) -->
-        <div class="flex flex-col items-center justify-center my-auto py-1 relative">
+        <div class="flex flex-col items-center justify-center my-auto py-0.5 relative shrink-0">
           
           <!-- ปุ่มตื่นนอน: ย้ายมาอยู่บนวงกลมใหญ่ ขนาดกลางๆ ไม่เล็กไม่ใหญ่ -->
-          <div class="mb-3.5 z-20">
+          <div class="mb-2 sm:mb-3 z-20">
             <button onclick="promptWakeUpReset()" title="ตื่นนอน: สรุปยอดและเริ่มรอบวันใหม่"
-              class="bg-zinc-950 hover:bg-emerald-950/60 active:scale-95 border border-emerald-500/40 hover:border-emerald-400 text-emerald-400 px-6 py-2 rounded-xl text-xs sm:text-sm font-mono font-semibold tracking-wide shadow-md shadow-emerald-950/40 flex items-center justify-center transition select-none">
+              class="bg-zinc-950 hover:bg-emerald-950/60 active:scale-95 border border-emerald-500/40 hover:border-emerald-400 text-emerald-400 px-5 py-1.5 rounded-xl text-xs font-mono font-semibold tracking-wide shadow-md shadow-emerald-950/40 flex items-center justify-center transition select-none">
               <span>ตื่นนอน</span>
             </button>
           </div>
 
-          <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
+          <div class="relative w-52 h-52 sm:w-64 sm:h-64 flex items-center justify-center">
             <!-- Floating Delta Anchor for Tap Animations (positioned right above central number) -->
-            <div id="floating-anchor" class="absolute top-8 inset-x-0 flex items-center justify-center pointer-events-none z-30"></div>
+            <div id="floating-anchor" class="absolute top-6 sm:top-8 inset-x-0 flex items-center justify-center pointer-events-none z-30"></div>
             
             <!-- SVG Progress Ring -->
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 240 240">
@@ -473,24 +473,24 @@
 
             <!-- Center Value Display: เฉพาะตัวเลขใหญ่และหน่วย ยุบลงตามแรงกด -->
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
-              <span id="main-cal-title" class="text-[10px] font-mono tracking-widest text-slate-400 uppercase">สถานะรอบวัน // DEFICIT</span>
-              <div id="main-cal-display" class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-emerald-400 my-1 transition-all select-none">
+              <span id="main-cal-title" class="text-[9px] sm:text-[10px] font-mono tracking-widest text-slate-400 uppercase">สถานะรอบวัน // DEFICIT</span>
+              <div id="main-cal-display" class="text-4xl sm:text-5xl font-bold font-mono tracking-tight text-emerald-400 my-0.5 transition-all select-none">
                 -3,006
               </div>
-              <span class="text-xs font-mono font-bold text-slate-400 tracking-wider">KCAL</span>
+              <span class="text-[11px] sm:text-xs font-mono font-bold text-slate-400 tracking-wider">KCAL</span>
             </div>
           </div>
 
           <!-- ข้อมูลสถานะและระดับพลังงาน (อยู่นอกกรอบวงกลมอย่างเป็นระเบียบ ไม่ทับเส้น) -->
-          <div class="text-center mt-2.5 space-y-1">
-            <div id="tier-metric-label" class="text-xs font-mono font-bold text-emerald-400 uppercase transition-all">
+          <div class="text-center mt-1.5 sm:mt-2 space-y-0.5">
+            <div id="tier-metric-label" class="text-[11px] sm:text-xs font-mono font-bold text-emerald-400 uppercase transition-all">
               โหมด TDEE: โควต้าเต็ม 3,388 KCAL
             </div>
-            <div id="tier-secondary-label" class="text-[11px] font-mono text-slate-400">
+            <div id="tier-secondary-label" class="text-[10px] sm:text-[11px] font-mono text-slate-400">
               ระดับพลังงานกิจกรรมประจำวัน (สูงกว่า BMR 2,186 kcal)
             </div>
             
-            <div class="flex items-center justify-center gap-4 text-xs font-mono text-slate-400 pt-1">
+            <div class="flex items-center justify-center gap-3.5 text-[11px] sm:text-xs font-mono text-slate-400 pt-0.5">
               <div>กินไปแล้ว: <span id="eaten-cal-display" class="font-bold text-slate-200">0</span> kcal</div>
               <div class="w-1 h-1 rounded-full bg-slate-700"></div>
               <div>คงเหลือ: <span id="percent-display" class="font-bold text-emerald-400">100%</span></div>
@@ -498,48 +498,48 @@
           </div>
 
           <!-- สวิชออกกำลังกาย: ล่างขวา เยื้องๆวงกลม สะอาดตา แค่คำว่าออกกำลังกาย -->
-          <div class="w-full flex justify-end pr-2 pt-1.5">
-            <label class="inline-flex items-center gap-2 cursor-pointer select-none px-3 py-1 rounded-full bg-zinc-950/80 border border-surface-border/80 hover:border-slate-600 transition shadow-sm">
-              <span class="text-[11px] font-mono font-medium text-slate-300">ออกกำลังกาย</span>
+          <div class="w-full flex justify-end pr-2 pt-1">
+            <label class="inline-flex items-center gap-2 cursor-pointer select-none px-2.5 py-1 rounded-full bg-zinc-950/80 border border-surface-border/80 hover:border-slate-600 transition shadow-sm">
+              <span class="text-[10px] sm:text-[11px] font-mono font-medium text-slate-300">ออกกำลังกาย</span>
               <input type="checkbox" id="toggle-exercise" onchange="toggleExerciseState(this.checked)" class="sr-only peer">
-              <div class="w-8 h-4 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 peer-checked:after:bg-zinc-950 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+              <div class="w-7 h-3.5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 peer-checked:after:bg-zinc-950 after:border-slate-300 after:border after:rounded-full after:h-2.5 after:w-3 after:transition-all peer-checked:bg-emerald-500 relative"></div>
             </label>
           </div>
         </div>
 
         <!-- Translucent Non-blocking Screen Divider Alert (เมื่อชนเพดาน TDEE / ออกกำลังกายเพิ่ม) -->
         <div id="tdee-ceiling-alert" class="pointer-events-none transition-all duration-300 opacity-0 -translate-y-1 transform px-3 -my-0.5 z-30">
-          <div class="ceiling-pill mx-auto max-w-sm bg-zinc-950/70 backdrop-blur-md border border-emerald-500/30 rounded-2xl py-1.5 px-3.5 flex items-center justify-center gap-2 shadow-xl shadow-emerald-950/40 text-center transition-all duration-150">
+          <div class="ceiling-pill mx-auto max-w-sm bg-zinc-950/70 backdrop-blur-md border border-emerald-500/30 rounded-2xl py-1 px-3.5 flex items-center justify-center gap-2 shadow-xl shadow-emerald-950/40 text-center transition-all duration-150">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400/80 animate-ping shrink-0"></span>
-            <span class="text-[11px] font-mono font-medium text-emerald-300/95 tracking-wide">
+            <span class="text-[10px] sm:text-[11px] font-mono font-medium text-emerald-300/95 tracking-wide">
               ออกกำลังกายเพิ่ม เพื่อเพิ่มเพดาน TDEE
             </span>
           </div>
         </div>
 
         <!-- THE TWO HUGE BIG BUTTONS (กดค้างรันเร็ว ยุบตัวจริง สั่นหน้าจอเบาๆ) -->
-        <div class="pt-2">
-          <div class="grid grid-cols-2 gap-3 h-24 sm:h-28">
+        <div class="pt-1 shrink-0">
+          <div class="grid grid-cols-2 gap-2.5 h-20 sm:h-24">
             
-            <!-- Left Huge Button: + 50 (กินอาหาร / เพิ่มแคลที่กิน) -->
-            <button id="btn-plus-huge"
-              class="btn-tactile group relative bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 border-2 border-emerald-500/50 hover:border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-950/30 overflow-hidden cursor-pointer select-none">
-              <div class="text-3xl sm:text-4xl font-black font-mono text-emerald-400 group-hover:scale-105 transition-transform pointer-events-none">
-                +50
+            <!-- Left Huge Button: - 50 (ลดแคล / ลบออก / ชดเชย) -->
+            <button id="btn-minus-huge"
+              class="btn-tactile group relative bg-surface-bg hover:bg-slate-800/80 active:bg-slate-900 border-2 border-surface-border hover:border-rose-500/50 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden cursor-pointer select-none">
+              <div class="text-2xl sm:text-3xl font-bold font-mono text-slate-200 group-hover:text-rose-400 transition-colors pointer-events-none">
+                -50
               </div>
-              <span class="text-[11px] font-mono font-bold tracking-wider text-emerald-300 uppercase mt-0.5 pointer-events-none">
-                กินอาหาร
+              <span class="text-[10px] sm:text-[11px] font-mono tracking-wider text-slate-400 group-hover:text-rose-300 uppercase mt-0.5 pointer-events-none">
+                ลดแคล
               </span>
             </button>
 
-            <!-- Right Huge Button: - 50 (ลดแคล / ลบออก / ชดเชย) -->
-            <button id="btn-minus-huge"
-              class="btn-tactile group relative bg-surface-bg hover:bg-slate-800/80 active:bg-slate-900 border-2 border-surface-border hover:border-rose-500/50 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden cursor-pointer select-none">
-              <div class="text-3xl sm:text-4xl font-black font-mono text-slate-200 group-hover:text-rose-400 transition-colors pointer-events-none">
-                -50
+            <!-- Right Huge Button: + 50 (กินอาหาร / เพิ่มแคลที่กิน) -->
+            <button id="btn-plus-huge"
+              class="btn-tactile group relative bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 border-2 border-emerald-500/50 hover:border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-950/30 overflow-hidden cursor-pointer select-none">
+              <div class="text-2xl sm:text-3xl font-bold font-mono text-emerald-400 group-hover:scale-105 transition-transform pointer-events-none">
+                +50
               </div>
-              <span class="text-[11px] font-mono tracking-wider text-slate-400 group-hover:text-rose-300 uppercase mt-0.5 pointer-events-none">
-                ลดแคล
+              <span class="text-[10px] sm:text-[11px] font-mono font-bold tracking-wider text-emerald-300 uppercase mt-0.5 pointer-events-none">
+                กินอาหาร
               </span>
             </button>
 
@@ -1378,7 +1378,7 @@
       if (net <= -(tdee - bmr)) {
         // TIER 1: GREEN (COMFORTABLE DEFICIT ZONE)
         circle.setAttribute('stroke', '#10b981');
-        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-emerald-400 my-1 select-none';
+        mainDisplay.className = 'text-4xl sm:text-5xl font-bold font-mono tracking-tight text-emerald-400 my-0.5 select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-emerald-400 uppercase';
         tierMetric.innerText = `โหมด DEFICIT: ลบ ${Math.abs(net).toLocaleString()} KCAL`;
         tierSecondary.innerText = `เผาผลาญติดลบตามแผน (กินไป ${eaten.toLocaleString()} / โควต้าเต็ม ${tdee.toLocaleString()} kcal)`;
@@ -1391,7 +1391,7 @@
       else if (net < 0) {
         // TIER 2: AMBER (APPROACHING CEILING / CLOSE TO 0)
         circle.setAttribute('stroke', '#f59e0b');
-        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-amber-300 my-1 select-none';
+        mainDisplay.className = 'text-4xl sm:text-5xl font-bold font-mono tracking-tight text-amber-300 my-0.5 select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-amber-400 uppercase';
         tierMetric.innerText = `ใกล้หมดโควต้า: เหลือติดลบ ${Math.abs(net).toLocaleString()} KCAL`;
         tierSecondary.innerText = `ใกล้แตะเพดาน TDEE (กินไป ${eaten.toLocaleString()} / โควต้า ${tdee.toLocaleString()} kcal)`;
@@ -1404,7 +1404,7 @@
       else {
         // TIER 3: RED (EXCEEDED CEILING / POSITIVE SURPLUS)
         circle.setAttribute('stroke', '#ef4444');
-        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-rose-400 my-1 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] select-none';
+        mainDisplay.className = 'text-4xl sm:text-5xl font-bold font-mono tracking-tight text-rose-400 my-0.5 drop-shadow-[0_0_12px_rgba(239,68,68,0.4)] select-none';
         tierMetric.className = 'text-xs font-mono font-bold text-rose-400 uppercase';
         
         if (net === 0) {
