@@ -465,6 +465,17 @@
           </div>
         </div>
 
+        <!-- Translucent Non-blocking Screen Divider Alert (เมื่อชนเพดาน TDEE / ออกกำลังกายเพิ่ม) -->
+        <div id="tdee-ceiling-alert" class="pointer-events-none transition-all duration-300 opacity-0 -translate-y-1 transform px-3 -my-0.5 z-30">
+          <div class="ceiling-pill mx-auto max-w-sm bg-zinc-950/70 backdrop-blur-md border border-emerald-500/30 rounded-2xl py-1.5 px-3.5 flex items-center justify-center gap-2 shadow-xl shadow-emerald-950/40 text-center transition-all duration-150">
+            <span class="text-xs">🏃‍♂️</span>
+            <span class="text-[11px] font-mono font-medium text-emerald-300/95 tracking-wide">
+              ออกกำลังกายเพิ่ม เพื่อเพิ่มเพดาน TDEE
+            </span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400/80 animate-ping shrink-0"></span>
+          </div>
+        </div>
+
         <!-- THE TWO HUGE BIG BUTTONS (กดค้างรันเร็ว ยุบตัวจริง สั่นหน้าจอเบาๆ เสียงเหมือนน้ำลด) -->
         <div class="pt-1">
           <div class="text-[10px] font-mono text-center text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5">
@@ -894,6 +905,28 @@
             osc.stop(startT + 0.33);
           });
         } catch (e) {}
+      },
+
+      // Soft glass/wood tick when touching TDEE ceiling
+      playCeilingTick() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(460, now);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.05);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.14, now + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.065);
+        } catch (e) {}
       }
     };
 
@@ -1010,11 +1043,15 @@
     function getCycleBalance() {
       if (!currentUser) return 2200;
       const userKey = currentUser.username.toLowerCase();
+      const tdee = currentUser.tdee || 2200;
       try {
         const stored = localStorage.getItem(`calcounting_current_cycle_${userKey}`);
-        if (stored !== null) return parseInt(stored, 10);
+        if (stored !== null) {
+          const val = parseInt(stored, 10);
+          return Math.min(tdee, val);
+        }
       } catch (e) {}
-      return currentUser.tdee || 2200;
+      return tdee;
     }
 
     function saveCycleBalance(val) {
@@ -1168,7 +1205,76 @@
       updateMiniFlagBadge();
     }
 
+    let ceilingAlertTimeout = null;
+
+    function showCeilingAlert() {
+      const alertEl = document.getElementById('tdee-ceiling-alert');
+      if (!alertEl) return;
+
+      alertEl.classList.remove('opacity-0', '-translate-y-1');
+      alertEl.classList.add('opacity-100', 'translate-y-0');
+
+      const pill = alertEl.querySelector('.ceiling-pill');
+      if (pill) {
+        pill.classList.remove('scale-100');
+        pill.classList.add('scale-[1.03]', 'border-emerald-400/50');
+        setTimeout(() => {
+          pill.classList.remove('scale-[1.03]', 'border-emerald-400/50');
+          pill.classList.add('scale-100');
+        }, 140);
+      }
+
+      if (ceilingAlertTimeout) clearTimeout(ceilingAlertTimeout);
+      ceilingAlertTimeout = setTimeout(() => {
+        alertEl.classList.remove('opacity-100', 'translate-y-0');
+        alertEl.classList.add('opacity-0', '-translate-y-1');
+      }, 2500);
+    }
+
     function adjustCalorie(amount, isRapid = false) {
+      const tdee = currentUser ? (currentUser.tdee || 2200) : 2200;
+
+      // เมื่อกดบวกแคล (+50): เช็คไม่ให้เกินเพดาน TDEE
+      if (amount > 0) {
+        // หากชนเพดานอยู่แล้ว ไม่ให้เพิ่มขึ้นอีก และแสดงแจ้งเตือนบางๆ มองทะลุได้ ไม่ขวางการกด
+        if (currentBalance >= tdee) {
+          currentBalance = tdee;
+          saveCycleBalance(currentBalance);
+          showCeilingAlert();
+          SoundEngine.playCeilingTick();
+          if (navigator.vibrate) navigator.vibrate(8);
+
+          const numDisplay = document.getElementById('main-cal-display');
+          numDisplay.classList.remove('number-bounce');
+          void numDisplay.offsetWidth;
+          numDisplay.classList.add('number-bounce');
+
+          if (!isRapid || Math.random() > 0.6) {
+            const anchor = document.getElementById('floating-anchor');
+            if (anchor) {
+              const chip = document.createElement('div');
+              chip.className = 'floating-chip font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border shadow-lg bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+              chip.innerText = 'เต็มเพดาน TDEE ⚡';
+              anchor.appendChild(chip);
+              setTimeout(() => chip.remove(), 620);
+            }
+          }
+
+          renderDialUI();
+          return;
+        }
+
+        // หากบวกแล้วจะชนเพดาน ให้ตัดยอดที่เพดานพอดี
+        if (currentBalance + amount >= tdee) {
+          currentBalance = tdee;
+          saveCycleBalance(currentBalance);
+          showCeilingAlert();
+          triggerSensoryImpact(amount, isRapid);
+          renderDialUI();
+          return;
+        }
+      }
+
       currentBalance += amount;
       saveCycleBalance(currentBalance);
       triggerSensoryImpact(amount, isRapid);
@@ -1734,6 +1840,11 @@
 
       currentBalance = getCycleBalance();
       updateProfileBaselines();
+      const maxTdee = currentUser ? (currentUser.tdee || 2200) : 2200;
+      if (currentBalance > maxTdee) {
+        currentBalance = maxTdee;
+        saveCycleBalance(currentBalance);
+      }
       renderDialUI();
       renderHistoryScreen();
       switchTab('dial');
@@ -1775,6 +1886,12 @@
           currentUser.bmr = bmr;
           currentUser.tdee = tdee;
           saveStoredUser(currentUser);
+
+          if (currentBalance > tdee) {
+            currentBalance = tdee;
+            saveCycleBalance(currentBalance);
+            renderDialUI();
+          }
         }
       }
     }
