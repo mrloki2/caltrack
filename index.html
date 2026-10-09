@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CALTRACK — Personal Nutrition & Calorie Engine</title>
-  <meta name="description" content="Minimalist Personal Calorie & Macro Nutrition Engine with Realtime Cooking-Method Parser">
+  <title>CALTRACK — Personal Calorie Dial & Nutrition Engine</title>
+  <meta name="description" content="Minimalist Dynamic Calorie Dial with 3-Tier Threshold Shifting and Precision Nutrition Engine">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -12,14 +12,6 @@
       theme: {
         extend: {
           colors: {
-            brand: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              400: '#34d399',
-              500: '#10b981',
-              600: '#059669',
-              900: '#064e3b',
-            },
             surface: {
               bg: '#090e17',
               card: '#111a2e',
@@ -34,63 +26,44 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: #090e17;
       color: #f1f5f9;
       -webkit-font-smoothing: antialiased;
+      user-select: none;
     }
     .font-mono {
       font-family: 'JetBrains Mono', monospace;
     }
     
-    /* Custom Scrollbars */
-    ::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
+    /* Smooth transitions */
+    .dial-transition {
+      transition: stroke-dashoffset 0.35s ease-out, stroke 0.4s ease;
     }
-    ::-webkit-scrollbar-track {
-      background: #090e17;
+
+    /* Glow animations */
+    @keyframes pulseTierRed {
+      0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
+      50% { box-shadow: 0 0 45px rgba(239, 68, 68, 0.5); }
     }
-    ::-webkit-scrollbar-thumb {
-      background: #1e293b;
-      border-radius: 9999px;
+    @keyframes pulseTierGreen {
+      0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.15); }
+      50% { box-shadow: 0 0 35px rgba(16, 185, 129, 0.35); }
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #334155;
-    }
+    .glow-green { animation: pulseTierGreen 3s infinite ease-in-out; }
+    .glow-red { animation: pulseTierRed 2s infinite ease-in-out; }
 
     /* Animated SVG Checkmark */
     @keyframes circleDraw {
-      0% {
-        stroke-dashoffset: 166;
-        transform: scale(0.85);
-      }
-      50% {
-        transform: scale(1.05);
-      }
-      100% {
-        stroke-dashoffset: 0;
-        transform: scale(1);
-      }
+      0% { stroke-dashoffset: 166; transform: scale(0.85); }
+      100% { stroke-dashoffset: 0; transform: scale(1); }
     }
     @keyframes checkDraw {
-      0% {
-        stroke-dashoffset: 48;
-      }
-      100% {
-        stroke-dashoffset: 0;
-      }
-    }
-    @keyframes pulseGlow {
-      0%, 100% {
-        box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
-      }
-      50% {
-        box-shadow: 0 0 35px rgba(16, 185, 129, 0.45);
-      }
+      0% { stroke-dashoffset: 48; }
+      100% { stroke-dashoffset: 0; }
     }
     .animate-circle {
       stroke-dasharray: 166;
@@ -102,15 +75,12 @@
       stroke-dashoffset: 48;
       animation: checkDraw 0.45s 0.4s cubic-bezier(0.65, 0, 0.45, 1) forwards;
     }
-    .modal-glow {
-      animation: pulseGlow 3s infinite ease-in-out;
-    }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-2 sm:p-4 selection:bg-emerald-500/20 selection:text-emerald-300">
 
   <!-- ============================================================== -->
-  <!-- 1. AUTH & ONBOARDING GATE (REGISTER / LOGIN / PROFILE SETUP)  -->
+  <!-- 1. AUTH GATE (REGISTER / LOGIN)                                -->
   <!-- ============================================================== -->
   <div id="auth-container" class="w-full max-w-md bg-surface-card border border-surface-border rounded-2xl shadow-2xl overflow-hidden p-6 relative transition-all">
     <div class="text-center space-y-2 mb-6">
@@ -119,7 +89,7 @@
         CALTRACK // ACCESS_GATE
       </div>
       <h1 class="text-2xl font-bold tracking-tight text-white">CALTRACK</h1>
-      <p class="text-xs text-slate-400">ระบบคำนวณสารอาหารและพลังงานส่วนบุคคล</p>
+      <p class="text-xs text-slate-400">ระบบคำนวณพลังงานและโควต้าแคลอรี่ส่วนบุคคล</p>
     </div>
 
     <!-- Mode Tabs: Register vs Login -->
@@ -132,7 +102,7 @@
       </button>
     </div>
 
-    <!-- Form: Registration & Initial Profile Setup -->
+    <!-- Form: Registration -->
     <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4">
       <div class="space-y-3">
         <div class="space-y-1">
@@ -161,8 +131,8 @@
       <!-- Initial Profile Parameters -->
       <div class="p-4 bg-surface-bg/80 border border-surface-border rounded-xl space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-mono uppercase text-slate-400 tracking-wider">ข้อมูลโปรไฟล์ส่วนบุคคล</span>
-          <span class="text-[10px] font-mono text-emerald-400">REALTIME_CALC</span>
+          <span class="text-[11px] font-mono uppercase text-slate-400 tracking-wider">ข้อมูลคำนวณฐานพลังงาน</span>
+          <span class="text-[10px] font-mono text-emerald-400">AUTO_TDEE</span>
         </div>
 
         <div class="grid grid-cols-3 gap-2">
@@ -205,7 +175,7 @@
             <div id="auth-bmr-preview" class="font-bold text-slate-200 text-xs">1,698</div>
           </div>
           <div class="p-1.5 bg-surface-card/60 rounded-lg">
-            <div class="text-[9px] text-slate-500">TDEE</div>
+            <div class="text-[9px] text-slate-500">TDEE สูงสุด</div>
             <div id="auth-tdee-preview" class="font-bold text-emerald-400 text-xs">2,632</div>
           </div>
         </div>
@@ -232,13 +202,10 @@
         </div>
       </div>
 
-      <div id="login-error" class="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg hidden font-mono">
-        <!-- Error message -->
-      </div>
+      <div id="login-error" class="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg hidden font-mono"></div>
 
       <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-semibold text-xs tracking-wide rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
         <span>เข้าสู่ระบบ CALTRACK</span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
       </button>
 
       <div class="text-center pt-2">
@@ -254,12 +221,7 @@
   <!-- 2. SETUP SUCCESS MODAL WITH ANIMATED CHECKMARK & TEASING BANNER-->
   <!-- ============================================================== -->
   <div id="modal-success" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
-    <div class="w-full max-w-sm bg-surface-card border border-surface-borderLight rounded-2xl p-6 text-center space-y-5 modal-glow relative overflow-hidden">
-      <!-- Glow background -->
-      <div class="absolute -top-20 -left-20 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-      <!-- Animated SVG Checkmark Icon -->
+    <div class="w-full max-w-sm bg-surface-card border border-surface-borderLight rounded-2xl p-6 text-center space-y-5 glow-green relative overflow-hidden">
       <div class="flex justify-center pt-2">
         <div class="w-20 h-20 relative flex items-center justify-center">
           <svg class="w-20 h-20" viewBox="0 0 52 52">
@@ -269,17 +231,13 @@
         </div>
       </div>
 
-      <!-- Dynamic Humor / Teasing Banner (Height > 185, Weight > 100) -->
       <div class="space-y-2">
-        <h2 id="modal-tease-title" class="text-lg sm:text-xl font-bold text-white leading-relaxed">
-          <!-- Injected dynamically: ตั้งค่าสำเร็จ เปรตเดินได้ สำเร็จ / เปรตอ้วน / สุกรเดินดิน -->
-        </h2>
-        <p id="modal-tease-subtitle" class="text-xs text-slate-300 leading-relaxed font-light">
-          บันทึกฐานข้อมูลโปรไฟล์เรียบร้อย พร้อมคำนวณพลังงานสารอาหารอัตโนมัติ
+        <h2 id="modal-tease-title" class="text-lg sm:text-xl font-bold text-white leading-relaxed"></h2>
+        <p class="text-xs text-slate-300 leading-relaxed font-light">
+          บันทึกฐานข้อมูลโปรไฟล์เรียบร้อย พร้อมคำนวณโควต้าพลังงานตั้งต้น
         </p>
       </div>
 
-      <!-- Metric Snapshot Card -->
       <div class="p-3 bg-surface-bg border border-surface-border rounded-xl grid grid-cols-3 gap-2 text-xs font-mono">
         <div>
           <span class="text-[10px] text-slate-400 block">ส่วนสูง</span>
@@ -290,268 +248,191 @@
           <span id="modal-weight-val" class="font-bold text-slate-100">105 kg</span>
         </div>
         <div>
-          <span class="text-[10px] text-slate-400 block">เป้าหมาย TDEE</span>
+          <span class="text-[10px] text-slate-400 block">โควต้า TDEE</span>
           <span id="modal-tdee-val" class="font-bold text-emerald-400">2,850</span>
         </div>
       </div>
 
       <button onclick="dismissSuccessModal()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-bold text-xs tracking-wider uppercase rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 font-mono">
-        <span>เข้าสู่ระบบ CALTRACK &rarr;</span>
+        <span>เข้าสู่หน้ากดแคลอรี่ &rarr;</span>
       </button>
     </div>
   </div>
 
 
   <!-- ============================================================== -->
-  <!-- 3. MAIN APPLICATION CONTAINER (LOG, HISTORY, HABITS, PROFILE) -->
+  <!-- 3. MAIN APPLICATION CONTAINER                                  -->
   <!-- ============================================================== -->
-  <div id="app-container" class="w-full max-w-md bg-surface-card border border-surface-border rounded-2xl shadow-2xl flex flex-col overflow-hidden min-h-[690px] relative hidden">
+  <div id="app-container" class="w-full max-w-md bg-surface-card border border-surface-border rounded-3xl shadow-2xl flex flex-col overflow-hidden min-h-[690px] relative hidden">
     
     <!-- Top Header Bar -->
     <header class="px-5 pt-4 pb-3 border-b border-surface-border flex items-center justify-between bg-surface-card/90 backdrop-blur">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="text-[11px] font-mono tracking-wider uppercase text-emerald-400 font-bold">CALTRACK</span>
-          <span class="text-[10px] text-slate-400 font-mono px-1.5 py-0.2 rounded bg-surface-bg border border-surface-border" id="header-user-tag">mrloki3</span>
-        </div>
-        <h1 id="screen-title" class="text-sm font-semibold text-slate-100">บันทึกมื้ออาหาร</h1>
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-mono tracking-wider uppercase text-emerald-400 font-bold">CALTRACK</span>
+        <span class="text-[10px] text-slate-400 font-mono px-2 py-0.5 rounded-full bg-surface-bg border border-surface-border" id="header-user-tag">mrloki3</span>
       </div>
-      <div class="flex items-center gap-3">
-        <div id="quick-today-badge" class="text-right">
-          <span class="text-[9px] text-slate-400 block font-mono">TODAY TOTAL</span>
-          <div class="text-sm font-bold text-emerald-400 font-mono"><span id="header-total-cal">0</span> <span class="text-[10px] font-normal text-slate-400">kcal</span></div>
-        </div>
-        <!-- Logout / Switch user button -->
-        <button onclick="handleLogout()" title="ออกจากระบบ" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-surface-bg border border-transparent hover:border-surface-border transition">
+      <div class="flex items-center gap-2">
+        <button onclick="resetTodayBalance()" title="รีเซ็ตยอดกลับสู่โควต้าเต็มวัน" class="text-xs text-slate-400 hover:text-emerald-400 p-1.5 rounded-lg hover:bg-surface-bg border border-transparent hover:border-surface-border transition flex items-center gap-1 font-mono">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span class="text-[10px]">RESET</span>
+        </button>
+        <button onclick="handleLogout()" title="ออกจากระบบ" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-surface-bg border border-transparent hover:border-surface-border transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         </button>
       </div>
     </header>
 
     <!-- Main Screens Viewport -->
-    <main class="flex-1 overflow-y-auto p-4 sm:p-5 relative space-y-4">
+    <main class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col justify-between relative space-y-4">
 
-      <!-- ================= 1. SCREEN: QUICK LOG ================= -->
-      <section id="screen-log" class="space-y-4">
-        <div class="space-y-1.5">
-          <div class="flex justify-between items-center text-xs">
-            <span class="text-slate-400">รายการอาหาร & พลังงาน</span>
-            <span class="font-mono text-[10px] text-emerald-400">MULTI_ITEM_PARSER</span>
+      <!-- ================= SCREEN 1: THE BIG CALORIE DIAL ================= -->
+      <section id="screen-dial" class="flex-1 flex flex-col justify-between space-y-4">
+        
+        <!-- Dynamic Level Status Pill (TDEE vs BMR vs BMI Alert) -->
+        <div class="text-center pt-1">
+          <div id="dynamic-mode-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold transition-all border">
+            <span id="dynamic-badge-dot" class="w-2 h-2 rounded-full animate-ping"></span>
+            <span id="dynamic-badge-text">โหมด TDEE: โควต้าพลังงานเต็ม</span>
           </div>
-          <div class="relative">
-            <textarea id="log-input" rows="3" 
-              placeholder="พิมพ์ชื่ออาหาร เช่น:&#10;• หมูทอด หรือ หมูย่าง (แยกแคลต่างกันชัดเจน)&#10;• ไก่ทอด กาแฟ ไข่ต้ม เนื้อย่าง หมูกระทะ ชาบู&#10;• ส้มตำ ไก่ย่าง ข้าวเหนียว 2 ห่อ หรือ ต้มเล้งหมู" 
-              class="w-full bg-surface-bg text-slate-100 border border-surface-border rounded-xl p-3.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all placeholder:text-slate-600 resize-none font-normal"></textarea>
-          </div>
-        </div>
-
-        <!-- Real-time Parsing & Candidate Selector -->
-        <div id="parse-preview" class="p-3.5 bg-surface-bg border border-surface-border rounded-xl space-y-2.5 text-xs transition-all">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span id="preview-indicator" class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
-              <span id="preview-text" class="text-slate-400 font-medium">พร้อมรับข้อมูล</span>
-            </div>
-            <span id="preview-badge" class="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-900 text-slate-500 border border-slate-800">-</span>
-          </div>
-
-          <!-- Breakdown Details -->
-          <div id="breakdown-tags" class="pt-1.5 border-t border-slate-800/80 text-[11px] text-slate-400 font-mono hidden flex-wrap gap-1.5 items-center">
-            <!-- tags dynamically injected -->
-          </div>
-
-          <!-- Disambiguation Candidate Pills -->
-          <div id="candidate-section" class="pt-2 border-t border-slate-800/80 hidden space-y-1.5">
-            <div class="text-[10px] font-mono text-slate-500 uppercase tracking-wider flex justify-between">
-              <span>ตัวเลือกที่ใกล้เคียง (แตะเพื่อสลับ):</span>
-              <span class="text-emerald-400 font-mono">CANDIDATES</span>
-            </div>
-            <div id="candidate-pills" class="flex flex-wrap gap-1.5">
-              <!-- Candidate pills injected here -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Submit Button -->
-        <button id="btn-save" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-semibold text-xs tracking-wide rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/15">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span>บันทึกรายการอาหาร</span>
-        </button>
-
-        <!-- Quick Test Bench -->
-        <div class="pt-2">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs text-slate-400">เปรียบเทียบกรรมวิธีการปรุง</span>
-            <span class="text-[10px] font-mono text-slate-500">QUICK_TEST</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <button onclick="testQuick('หมูย่าง')" class="p-2.5 bg-surface-bg hover:bg-surface-card border border-surface-border rounded-lg text-left transition flex justify-between items-center group">
-              <span class="text-slate-300 group-hover:text-white">หมูย่าง (ไม่ใช้น้ำมัน)</span>
-              <span class="text-emerald-400 font-mono text-[11px]">240</span>
-            </button>
-            <button onclick="testQuick('หมูทอด')" class="p-2.5 bg-surface-bg hover:bg-surface-card border border-surface-border rounded-lg text-left transition flex justify-between items-center group">
-              <span class="text-slate-300 group-hover:text-white">หมูทอด (ชุบน้ำมัน)</span>
-              <span class="text-emerald-400 font-mono text-[11px]">380</span>
-            </button>
-            <button onclick="testQuick('เนื้อย่าง')" class="p-2.5 bg-surface-bg hover:bg-surface-card border border-surface-border rounded-lg text-left transition flex justify-between items-center group">
-              <span class="text-slate-300 group-hover:text-white">เนื้อย่าง</span>
-              <span class="text-emerald-400 font-mono text-[11px]">220</span>
-            </button>
-            <button onclick="testQuick('ต้มเล้งหมู')" class="p-2.5 bg-surface-bg hover:bg-surface-card border border-surface-border rounded-lg text-left transition flex justify-between items-center group">
-              <span class="text-slate-300 group-hover:text-white">ต้มเล้งหมู</span>
-              <span class="text-emerald-400 font-mono text-[11px]">380</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= 2. SCREEN: HISTORY (TODAY VS PAST) ================= -->
-      <section id="screen-today" class="space-y-4 hidden">
-        <!-- Sub-tab Switcher -->
-        <div class="flex p-1 bg-surface-bg border border-surface-border rounded-xl text-xs font-mono">
-          <button onclick="switchHistorySubTab('today')" id="subtab-btn-today" class="flex-1 py-1.5 rounded-lg text-emerald-400 bg-surface-card border border-surface-border font-semibold transition">
-            วันนี้ (TODAY)
-          </button>
-          <button onclick="switchHistorySubTab('past')" id="subtab-btn-past" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition">
-            ประวัติทั้งหมด (HISTORY)
-          </button>
-        </div>
-
-        <!-- VIEW A: TODAY VIEW -->
-        <div id="view-today" class="space-y-4">
-          <div class="flex items-center justify-between bg-surface-bg p-3.5 rounded-xl border border-surface-border">
-            <div>
-              <div class="text-[11px] text-slate-400 font-mono" id="today-date-label">TODAY TOTAL</div>
-              <div class="text-xl font-bold font-mono text-emerald-400 mt-0.5"><span id="today-total-number">0</span> <span class="text-xs font-normal text-slate-400">kcal</span></div>
-            </div>
-            <div class="text-right">
-              <span class="text-[11px] text-slate-400 font-mono">ENTRIES</span>
-              <div class="text-sm font-semibold font-mono text-slate-200 mt-0.5"><span id="meal-count">0</span> รายการ</div>
-            </div>
-          </div>
-
-          <div class="space-y-2" id="meal-list">
-            <!-- Meal items dynamically injected -->
-          </div>
-        </div>
-
-        <!-- VIEW B: PAST HISTORY VIEW -->
-        <div id="view-past" class="space-y-4 hidden">
-          <div class="flex items-center justify-between bg-surface-bg p-3.5 rounded-xl border border-surface-border">
-            <div>
-              <div class="text-[11px] text-slate-400 font-mono" id="past-month-label">MONTHLY TOTAL</div>
-              <div class="text-xl font-bold font-mono text-emerald-400 mt-0.5"><span id="month-total-cal">0</span> <span class="text-xs font-normal text-slate-400">kcal</span></div>
-            </div>
-            <div class="text-right">
-              <span class="text-[11px] text-slate-400 font-mono">AVG / DAY</span>
-              <div class="text-sm font-semibold font-mono text-slate-200 mt-0.5"><span id="month-avg-cal">0</span> kcal</div>
-            </div>
-          </div>
-
-          <div class="space-y-2" id="past-days-list">
-            <!-- Injected dynamically -->
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= 3. SCREEN: HABIT ANALYTICS ================= -->
-      <section id="screen-analytics" class="space-y-4 hidden">
-        <div class="p-3 bg-surface-bg border border-surface-border rounded-xl text-xs text-slate-400 flex items-center justify-between">
-          <span>สถิติพฤติกรรมการรับประทานจริง</span>
-          <span class="font-mono text-[11px] text-emerald-400">RAW_METRICS</span>
-        </div>
-
-        <div class="p-4 bg-surface-bg border border-surface-border rounded-xl">
-          <div class="text-[11px] text-slate-400 font-mono uppercase">EATING_PATTERN</div>
-          <div class="text-sm font-bold text-emerald-400 mt-1 font-mono" id="analytics-archetype">ANALYZING...</div>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed" id="analytics-description">
-            ระบบจะคำนวณสัดส่วนจากรายการที่คุณบันทึกจริงทั้งหมด
+          <p id="dynamic-badge-sub" class="text-[11px] text-slate-400 mt-1 font-light">
+            คำนวณจากเกณฑ์การใช้พลังงานสูงสุดของวัน
           </p>
         </div>
 
-        <!-- Eating Window & Time Distribution -->
-        <div class="p-4 bg-surface-bg border border-surface-border rounded-xl space-y-3">
-          <div class="flex justify-between items-center">
-            <div class="text-[11px] text-slate-400 font-mono uppercase">TIME_DISTRIBUTION</div>
-            <span class="text-[11px] font-mono text-slate-500" id="analytics-sample-size">ALL_TIME</span>
+        <!-- The Big Visual Circular Gauge -->
+        <div class="flex flex-col items-center justify-center my-auto py-2">
+          <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
+            
+            <!-- SVG Progress Ring -->
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 240 240">
+              <!-- Background Circle -->
+              <circle cx="120" cy="120" r="100" stroke="#1e293b" stroke-width="14" fill="transparent"/>
+              <!-- Dynamic Colored Progress Circle -->
+              <circle id="dial-circle" cx="120" cy="120" r="100" 
+                stroke="#10b981" stroke-width="14" 
+                stroke-linecap="round" 
+                fill="transparent" 
+                stroke-dasharray="628.32" 
+                stroke-dashoffset="0" 
+                class="dial-transition"/>
+            </svg>
+
+            <!-- Center Value Display -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+              <span class="text-[11px] font-mono tracking-widest text-slate-400 uppercase">CALORIE REMAINING</span>
+              
+              <!-- Massive Main Calorie Counter -->
+              <div id="main-cal-display" class="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1 transition-all">
+                2,450
+              </div>
+
+              <!-- Shifting Metric Indicator (Changes based on tier) -->
+              <div class="space-y-0.5">
+                <div id="tier-metric-label" class="text-xs font-mono font-bold text-emerald-400 uppercase transition-all">
+                  TDEE TARGET: 2,450
+                </div>
+                <div id="tier-secondary-label" class="text-[10px] font-mono text-slate-500">
+                  ฐาน BMR: 1,650 kcal
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="space-y-2.5 text-xs">
-            <div>
-              <div class="flex justify-between mb-1">
-                <span class="text-slate-300">เช้า (06:00 - 11:00)</span>
-                <span class="font-mono text-slate-400" id="dist-morning-label">0% (0 kcal)</span>
-              </div>
-              <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                <div id="dist-morning-bar" class="h-full bg-slate-400 rounded-full" style="width: 0%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between mb-1">
-                <span class="text-slate-300">กลางวัน (11:00 - 15:00)</span>
-                <span class="font-mono text-emerald-400 font-semibold" id="dist-noon-label">0% (0 kcal)</span>
-              </div>
-              <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                <div id="dist-noon-bar" class="h-full bg-emerald-400 rounded-full" style="width: 0%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between mb-1">
-                <span class="text-slate-300">เย็น (15:00 - 20:00)</span>
-                <span class="font-mono text-slate-400" id="dist-eve-label">0% (0 kcal)</span>
-              </div>
-              <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                <div id="dist-eve-bar" class="h-full bg-slate-400 rounded-full" style="width: 0%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between mb-1">
-                <span class="text-slate-300">ดึก (20:00 - 03:00)</span>
-                <span class="font-mono text-slate-300" id="dist-night-label">0% (0 kcal)</span>
-              </div>
-              <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                <div id="dist-night-bar" class="h-full bg-slate-500 rounded-full" style="width: 0%"></div>
-              </div>
-            </div>
+          <!-- Quick Info Ratio -->
+          <div class="flex items-center justify-center gap-6 text-xs font-mono text-slate-400 mt-2">
+            <div>กินไปแล้ว: <span id="eaten-cal-display" class="font-bold text-slate-200">0</span> kcal</div>
+            <div class="w-1 h-1 rounded-full bg-slate-700"></div>
+            <div>สัดส่วน: <span id="percent-display" class="font-bold text-emerald-400">100%</span></div>
           </div>
         </div>
 
-        <!-- Pure Stats Grid -->
-        <div class="grid grid-cols-2 gap-2 text-xs">
-          <div class="p-3 bg-surface-bg border border-surface-border rounded-xl">
-            <span class="text-[11px] text-slate-400 font-mono block">AVG_MEALS_PER_DAY</span>
-            <div class="text-base font-bold font-mono text-slate-100 mt-1" id="stat-avg-meals">0</div>
+        <!-- THE TWO HUGE BIG BUTTONS (LEFT: +50, RIGHT: -50) -->
+        <div class="pt-2">
+          <div class="text-[10px] font-mono text-center text-slate-500 uppercase tracking-widest mb-2">
+            กดซ้ายเพื่อบวกคืน • กดขวาเพื่อตัดยอดแคลอรี่
           </div>
-          <div class="p-3 bg-surface-bg border border-surface-border rounded-xl">
-            <span class="text-[11px] text-slate-400 font-mono block">FIRST_MEAL_TIME</span>
-            <div class="text-base font-bold font-mono text-slate-100 mt-1" id="stat-first-time">-</div>
-          </div>
-          <div class="p-3 bg-surface-bg border border-surface-border rounded-xl">
-            <span class="text-[11px] text-slate-400 font-mono block">TOP_KEYWORDS</span>
-            <div class="text-xs font-medium text-slate-200 mt-1 truncate" id="stat-top-words">-</div>
-          </div>
-          <div class="p-3 bg-surface-bg border border-surface-border rounded-xl">
-            <span class="text-[11px] text-slate-400 font-mono block">AVG_DAILY_KCAL</span>
-            <div class="text-base font-bold font-mono text-slate-100 mt-1" id="stat-avg-cal">0 kcal</div>
+          <div class="grid grid-cols-2 gap-3 h-28 sm:h-32">
+            
+            <!-- Left Huge Button: + 50 -->
+            <button onclick="adjustCalorie(50)" 
+              class="group relative bg-surface-bg hover:bg-slate-800/80 active:scale-[0.97] border-2 border-surface-border hover:border-slate-600 rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg overflow-hidden">
+              <div class="text-3xl sm:text-4xl font-black font-mono text-slate-200 group-hover:text-emerald-400 transition-colors">
+                +50
+              </div>
+              <span class="text-[11px] font-mono tracking-wider text-slate-400 uppercase mt-0.5">
+                บวกคืน
+              </span>
+            </button>
+
+            <!-- Right Huge Button: - 50 -->
+            <button onclick="adjustCalorie(-50)" 
+              id="btn-minus-huge"
+              class="group relative bg-emerald-500 hover:bg-emerald-400 active:scale-[0.97] border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden">
+              <div class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-slate-950">
+                -50
+              </div>
+              <span class="text-[11px] font-mono font-bold tracking-wider text-slate-900 uppercase mt-0.5">
+                กินอาหาร (หักแคล)
+              </span>
+            </button>
+
           </div>
         </div>
+
       </section>
 
-      <!-- ================= 4. SCREEN: PROFILE ================= -->
-      <section id="screen-profile" class="space-y-4 hidden">
+      <!-- ================= SCREEN 2: HIGH-ACCURACY THAI FOOD SEARCH ENGINE ================= -->
+      <section id="screen-search" class="space-y-4 hidden flex-1 flex flex-col">
+        
+        <!-- Search Header -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-white">เสิร์ชแอนจิ้นสารอาหาร & แคลอรี่</h2>
+              <p class="text-[11px] text-slate-400">ฐานข้อมูลโภชนาการมาตรฐาน แยกตามกรรมวิธีปรุง</p>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              ACCURATE_DB
+            </span>
+          </div>
+
+          <!-- Search Input Box -->
+          <div class="relative">
+            <input type="text" id="food-search-input" oninput="handleFoodSearch(this.value)" placeholder="ค้นหาชื่ออาหาร เช่น หมูทอด, หมูย่าง, ต้มเล้ง, ชาไทย..." 
+              class="w-full bg-surface-bg border border-surface-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-slate-600 transition">
+            <svg class="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+        </div>
+
+        <!-- Filter Tags -->
+        <div class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] font-mono scrollbar-none">
+          <button onclick="filterCategory('all')" class="cat-pill px-2.5 py-1 rounded-lg bg-emerald-500 text-slate-950 font-semibold shrink-0" data-cat="all">ทั้งหมด</button>
+          <button onclick="filterCategory('dish')" class="cat-pill px-2.5 py-1 rounded-lg bg-surface-bg text-slate-400 border border-surface-border shrink-0" data-cat="dish">อาหารจานเดียว</button>
+          <button onclick="filterCategory('grill')" class="cat-pill px-2.5 py-1 rounded-lg bg-surface-bg text-slate-400 border border-surface-border shrink-0" data-cat="grill">ปิ้ง/ย่าง</button>
+          <button onclick="filterCategory('fry')" class="cat-pill px-2.5 py-1 rounded-lg bg-surface-bg text-slate-400 border border-surface-border shrink-0" data-cat="fry">ทอด</button>
+          <button onclick="filterCategory('soup')" class="cat-pill px-2.5 py-1 rounded-lg bg-surface-bg text-slate-400 border border-surface-border shrink-0" data-cat="soup">ต้ม/แกง</button>
+          <button onclick="filterCategory('drink')" class="cat-pill px-2.5 py-1 rounded-lg bg-surface-bg text-slate-400 border border-surface-border shrink-0" data-cat="drink">เครื่องดื่ม</button>
+        </div>
+
+        <!-- Results List -->
+        <div id="search-results-list" class="space-y-2 flex-1 overflow-y-auto pr-1">
+          <!-- Dynamically injected items -->
+        </div>
+
+      </section>
+
+      <!-- ================= SCREEN 3: PROFILE & BASELINES ================= -->
+      <section id="screen-profile" class="space-y-4 hidden flex-1">
         <div class="p-4 bg-surface-bg border border-surface-border rounded-xl space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-[11px] text-slate-400 font-mono uppercase">BODY_PARAMETERS</span>
-            <span class="text-[11px] text-emerald-400 font-mono" id="profile-user-display">USER</span>
+            <span class="text-[11px] text-emerald-400 font-mono" id="profile-user-display">mrloki3</span>
           </div>
           
           <div class="grid grid-cols-3 gap-2">
             <div>
               <label class="text-[11px] text-slate-400 block mb-1">อายุ</label>
-              <input type="number" id="input-age" value="28" oninput="updateProfileBaselines()"
+              <input type="number" id="input-age" value="26" oninput="updateProfileBaselines()"
                 class="w-full bg-surface-card border border-surface-border rounded-lg p-2 text-center text-sm font-mono text-slate-100 focus:outline-none focus:border-emerald-500">
             </div>
             <div>
@@ -578,277 +459,120 @@
           </div>
         </div>
 
-        <div class="p-4 bg-surface-bg border border-surface-border rounded-xl space-y-2 text-xs">
-          <div class="text-[11px] text-slate-400 font-mono uppercase">CALCULATED_BASELINES</div>
+        <!-- Calculated Thresholds Card -->
+        <div class="p-4 bg-surface-bg border border-surface-border rounded-xl space-y-2.5 text-xs">
+          <div class="text-[11px] text-slate-400 font-mono uppercase">TIER_THRESHOLDS_INFO</div>
           
           <div class="flex justify-between py-1.5 border-b border-surface-border">
-            <span class="text-slate-400">BMR (Basal Metabolic Rate)</span>
-            <span class="font-mono font-bold text-slate-200" id="profile-bmr">1,650 kcal</span>
+            <span class="text-emerald-400 font-medium">ระดับ 1 (เขียว): โหมด TDEE</span>
+            <span class="font-mono font-bold text-slate-100" id="profile-tdee">2,632 kcal</span>
           </div>
           <div class="flex justify-between py-1.5 border-b border-surface-border">
-            <span class="text-slate-400">TDEE (Daily Energy Expenditure)</span>
-            <span class="font-mono font-bold text-emerald-400" id="profile-tdee">2,558 kcal</span>
+            <span class="text-amber-400 font-medium">ระดับ 2 (ส้ม): แตะเส้น BMR</span>
+            <span class="font-mono font-bold text-slate-100" id="profile-bmr">1,698 kcal</span>
           </div>
           <div class="flex justify-between py-1.5">
-            <span class="text-slate-400">BMI ดัชนีมวลกาย</span>
-            <span class="font-mono text-slate-300 font-bold" id="profile-bmi">22.9</span>
+            <span class="text-rose-400 font-medium">ระดับ 3 (แดง): BMI Alert / แคลใกล้หมด</span>
+            <span class="font-mono font-bold text-slate-100" id="profile-bmi">22.9</span>
           </div>
         </div>
 
-        <div class="p-4 bg-surface-bg border border-surface-border rounded-xl space-y-2.5 text-xs">
-          <div class="text-[11px] text-slate-400 font-mono uppercase">SECURITY & ACTIONS</div>
+        <div class="p-4 bg-surface-bg border border-surface-border rounded-xl space-y-2 text-xs">
           <div class="flex justify-between items-center text-slate-300">
             <span>เปลี่ยนรหัส PIN</span>
             <button onclick="promptChangePin()" class="text-xs text-emerald-400 hover:underline font-mono">CHANGE_PIN</button>
-          </div>
-          <div class="flex justify-between items-center pt-2 border-t border-surface-border text-slate-300">
-            <span>ล้างบันทึกอาหารทั้งหมด</span>
-            <button onclick="clearAllData()" class="text-xs text-rose-400 hover:text-rose-300 transition font-mono">CLEAR_ALL_LOGS</button>
           </div>
         </div>
       </section>
 
     </main>
 
-    <!-- Bottom Navigation Tabs (4 Screens) -->
-    <nav class="border-t border-surface-border bg-surface-card px-2 py-2 flex items-center justify-around text-xs shrink-0">
-      <button onclick="switchTab('log')" id="tab-log" class="tab-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-emerald-400 font-semibold transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-        <span>บันทึก</span>
+    <!-- Bottom Navigation Bar (Home Dial vs Search vs Profile) -->
+    <nav class="border-t border-surface-border bg-surface-card px-4 py-2 flex items-center justify-around text-xs shrink-0">
+      
+      <button onclick="switchTab('dial')" id="nav-dial" class="nav-item flex-1 py-1.5 flex flex-col items-center gap-1 text-emerald-400 font-semibold transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 3"/></svg>
+        <span>กดแคลอรี่</span>
       </button>
 
-      <button onclick="switchTab('today')" id="tab-today" class="tab-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span>ประวัติ</span>
+      <button onclick="switchTab('search')" id="nav-search" class="nav-item flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <span>ค้นหาอาหาร</span>
       </button>
 
-      <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        <span>ทิศทาง</span>
-      </button>
-
-      <button onclick="switchTab('profile')" id="tab-profile" class="tab-btn flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
+      <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 py-1.5 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
         <span>โปรไฟล์</span>
       </button>
+
     </nav>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- TOAST NOTIFICATION                                             -->
+  <!-- ============================================================== -->
+  <div id="toast" class="fixed top-5 z-50 transform -translate-y-16 opacity-0 transition-all duration-300 pointer-events-none px-4 py-2.5 rounded-xl bg-surface-card border border-emerald-500/40 text-emerald-300 font-mono text-xs shadow-2xl flex items-center gap-2">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    <span id="toast-text">หักยอดแคลอรี่เรียบร้อย</span>
   </div>
 
   <script>
     // ==============================================================
-    // 1. COMPREHENSIVE THAI FOOD & COOKING METHOD MATRIX
+    // 1. HIGH-ACCURACY THAI FOOD & COOKING METHOD MATRIX
     // ==============================================================
-    const FOOD_ITEMS = [
-      // ย่าง vs ทอด vs ต้ม (แยกแคลอรี่ตามปริมาณน้ำมัน)
-      {
-        keys: ['หมูย่าง', 'คอหมูย่าง'],
-        default: { name: 'หมูย่าง (ไม่ทอดน้ำมัน)', cal: 240, c: 2, p: 24, f: 15 },
-        candidates: [
-          { name: 'หมูย่างเนื้อล้วน', cal: 210, c: 2, p: 26, f: 11 },
-          { name: 'คอหมูย่างติดมัน', cal: 320, c: 2, p: 22, f: 25 },
-          { name: 'หมูย่าง + ข้าวเหนียว', cal: 440, c: 45, p: 26, f: 16 }
-        ]
-      },
-      {
-        keys: ['หมูทอด', 'หมูสามชั้นทอด', 'หมูแดดเดียวทอด', 'หมูกระเทียมทอด'],
-        default: { name: 'หมูทอด (ชุบน้ำมัน)', cal: 380, c: 8, p: 22, f: 29 },
-        candidates: [
-          { name: 'หมูทอดกระเทียม', cal: 380, c: 10, p: 22, f: 29 },
-          { name: 'หมูสามชั้นทอดน้ำปลา', cal: 490, c: 5, p: 18, f: 45 },
-          { name: 'หมูทอดเจียงฮาย', cal: 420, c: 12, p: 20, f: 33 },
-          { name: 'ข้าวหมูทอด (1 จาน)', cal: 580, c: 55, p: 24, f: 30 }
-        ]
-      },
-      {
-        keys: ['เนื้อย่าง', 'เสือร้องไห้'],
-        default: { name: 'เนื้อย่าง (1 จาน)', cal: 220, c: 1, p: 28, f: 12 },
-        candidates: [
-          { name: 'เนื้อย่างไม่ติดมัน', cal: 190, c: 0, p: 30, f: 8 },
-          { name: 'เสือร้องไห้ติดมัน', cal: 290, c: 1, p: 24, f: 21 },
-          { name: 'เนื้อย่าง + ข้าวเหนียว', cal: 420, c: 44, p: 30, f: 13 }
-        ]
-      },
-      {
-        keys: ['เนื้อทอด', 'เนื้อแดดเดียว'],
-        default: { name: 'เนื้อทอด', cal: 340, c: 4, p: 27, f: 24 }
-      },
-      {
-        keys: ['ไก่ทอด', 'ไก่ทอดหาดใหญ่'],
-        default: { name: 'ไก่ทอด (1 ชิ้น)', cal: 260, c: 8, p: 22, f: 16 },
-        candidates: [
-          { name: 'ไก่ทอด (1 ชิ้น)', cal: 260, c: 8, p: 22, f: 16 },
-          { name: 'ไก่ทอด 1 ชิ้น + ข้าวเหนียว', cal: 460, c: 50, p: 24, f: 17 },
-          { name: 'ข้าวไก่ทอด (1 จาน)', cal: 590, c: 60, p: 26, f: 27 },
-          { name: 'อกไก่ทอดหาดใหญ่', cal: 320, c: 12, p: 30, f: 17 }
-        ]
-      },
-      {
-        keys: ['ไก่ย่าง'],
-        default: { name: 'ไก่ย่าง (1 ชิ้น)', cal: 190, c: 2, p: 26, f: 9 },
-        candidates: [
-          { name: 'อกไก่ย่าง', cal: 150, c: 1, p: 30, f: 3 },
-          { name: 'น่อง/สะโพกไก่ย่าง', cal: 220, c: 2, p: 24, f: 13 },
-          { name: 'ไก่ย่าง + ข้าวเหนียว', cal: 390, c: 44, p: 28, f: 10 }
-        ]
-      },
-      {
-        keys: ['ชาบู', 'ชาบูบุฟเฟต์'],
-        default: { name: 'ชาบู (มื้อปกติ)', cal: 700, c: 45, p: 55, f: 32 },
-        candidates: [
-          { name: 'ชาบูมื้อพอดีอิ่ม', cal: 650, c: 40, p: 50, f: 30 },
-          { name: 'ชาบูบุฟเฟต์จัดเต็ม', cal: 1150, c: 75, p: 85, f: 62 },
-          { name: 'ชาบูเน้นผักและเนื้อไม่ติดมัน', cal: 480, c: 30, p: 45, f: 18 }
-        ]
-      },
-      {
-        keys: ['หมูกระทะ', 'หมูกะทะ'],
-        default: { name: 'หมูกระทะมื้อทั่วไป', cal: 850, c: 50, p: 60, f: 48 },
-        candidates: [
-          { name: 'หมูกระทะมื้อทั่วไป', cal: 850, c: 50, p: 60, f: 48 },
-          { name: 'หมูกระทะบุฟเฟต์จัดเต็ม', cal: 1350, c: 80, p: 95, f: 78 }
-        ]
-      },
-      {
-        keys: ['ต้มเล้งหมู', 'ต้มเล้ง', 'เล้งหมู', 'เล้ง'],
-        default: { name: 'ต้มเล้งแซ่บ (ชามเดี่ยว)', cal: 380, c: 8, p: 42, f: 20 },
-        candidates: [
-          { name: 'ต้มเล้งแซ่บ (ชามเดี่ยว)', cal: 380, c: 8, p: 42, f: 20 },
-          { name: 'ต้มเล้งชามใหญ่พิเศษ', cal: 520, c: 10, p: 60, f: 26 },
-          { name: 'ต้มเล้ง + ข้าวสวย 1 จาน', cal: 580, c: 52, p: 45, f: 21 }
-        ]
-      },
-      {
-        keys: ['หมูปิ้ง'],
-        default: { name: 'หมูปิ้ง (1 ไม้)', cal: 140, c: 6, p: 9, f: 9 },
-        candidates: [
-          { name: 'หมูปิ้งนมสด (1 ไม้)', cal: 155, c: 7, p: 9, f: 10 },
-          { name: 'หมูปิ้ง 3 ไม้ ข้าวเหนียว 1 ห่อ', cal: 620, c: 60, p: 30, f: 29 }
-        ]
-      },
-      {
-        keys: ['ข้าวกะเพราหมูกรอบ', 'กะเพราหมูกรอบ'],
-        default: { name: 'ข้าวกะเพราหมูกรอบ', cal: 650, c: 60, p: 20, f: 38 },
-        candidates: [
-          { name: 'ข้าวกะเพราหมูกรอบ', cal: 650, c: 60, p: 20, f: 38 },
-          { name: 'ข้าวกะเพราหมูกรอบ + ไข่ดาว', cal: 760, c: 61, p: 26, f: 47 }
-        ]
-      },
-      {
-        keys: ['กะเพราไก่', 'ข้าวกะเพราไก่'],
-        default: { name: 'ข้าวกะเพราไก่', cal: 530, c: 58, p: 28, f: 20 },
-        candidates: [
-          { name: 'ข้าวกะเพราไก่', cal: 530, c: 58, p: 28, f: 20 },
-          { name: 'ข้าวกะเพราไก่ + ไข่ดาว', cal: 640, c: 59, p: 34, f: 29 }
-        ]
-      },
-      {
-        keys: ['กะเพราหมูสับ', 'ข้าวกะเพราหมูสับ'],
-        default: { name: 'ข้าวกะเพราหมูสับ', cal: 580, c: 58, p: 24, f: 28 },
-        candidates: [
-          { name: 'ข้าวกะเพราหมูสับ', cal: 580, c: 58, p: 24, f: 28 },
-          { name: 'ข้าวกะเพราหมูสับ + ไข่ดาว', cal: 690, c: 59, p: 30, f: 37 }
-        ]
-      },
-      {
-        keys: ['ข้าวมันไก่'],
-        default: { name: 'ข้าวมันไก่ต้ม', cal: 590, c: 65, p: 26, f: 24 },
-        candidates: [
-          { name: 'ข้าวมันไก่ต้ม (เนื้อน่อง)', cal: 590, c: 65, p: 26, f: 24 },
-          { name: 'ข้าวมันไก่ต้ม (เนื้ออกไม่หนัง)', cal: 490, c: 65, p: 32, f: 11 },
-          { name: 'ข้าวมันไก่ทอด', cal: 670, c: 70, p: 24, f: 33 },
-          { name: 'ข้าวมันไก่ผสม (ต้ม+ทอด)', cal: 640, c: 68, p: 25, f: 29 }
-        ]
-      },
-      {
-        keys: ['ส้มตำ', 'ส้มตำไทย', 'ส้มตำปูปลาร้า'],
-        default: { name: 'ส้มตำไทย', cal: 120, c: 24, p: 4, f: 1 },
-        candidates: [
-          { name: 'ส้มตำไทย', cal: 120, c: 24, p: 4, f: 1 },
-          { name: 'ส้มตำปูปลาร้า', cal: 80, c: 14, p: 4, f: 1 },
-          { name: 'ส้มตำไทยไข่เค็ม', cal: 200, c: 26, p: 9, f: 7 }
-        ]
-      },
-      {
-        keys: ['ข้าวเหนียว'],
-        default: { name: 'ข้าวเหนียว (1 ห่อ)', cal: 200, c: 44, p: 4, f: 1 }
-      },
-      {
-        keys: ['ข้าวสวย', 'ข้าวเปล่า'],
-        default: { name: 'ข้าวสวย (1 ทัพพี)', cal: 80, c: 18, p: 1.5, f: 0.2 },
-        candidates: [
-          { name: 'ข้าวสวย (1 ทัพพี)', cal: 80, c: 18, p: 1.5, f: 0.2 },
-          { name: 'ข้าวสวย (1 จาน / 2 ทัพพี)', cal: 160, c: 36, p: 3, f: 0.5 },
-          { name: 'ข้าวกล้อง (1 จาน)', cal: 150, c: 34, p: 3.5, f: 1 }
-        ]
-      },
-      {
-        keys: ['ไข่ดาว'],
-        default: { name: 'ไข่ดาว (ทอดน้ำมัน)', cal: 110, c: 0.5, p: 6, f: 9 },
-        candidates: [
-          { name: 'ไข่ดาวทอดกรอบ', cal: 125, c: 0.5, p: 6, f: 11 },
-          { name: 'ไข่ดาวน้ำ (ไม่ใช้น้ำมัน)', cal: 75, c: 0.5, p: 6, f: 5 }
-        ]
-      },
-      {
-        keys: ['ไข่เจียว'],
-        default: { name: 'ไข่เจียว (1 ฟอง)', cal: 180, c: 1, p: 6, f: 16 },
-        candidates: [
-          { name: 'ไข่เจียวหมูสับ (1 จาน)', cal: 320, c: 3, p: 14, f: 28 },
-          { name: 'ข้าวไข่เจียว', cal: 450, c: 45, p: 10, f: 24 }
-        ]
-      },
-      {
-        keys: ['ไข่ต้ม'],
-        default: { name: 'ไข่ต้ม (1 ฟอง)', cal: 75, c: 0.5, p: 6.5, f: 5 }
-      },
-      {
-        keys: ['กาแฟ', 'อเมริกาโน่', 'กาแฟดำ'],
-        default: { name: 'กาแฟอเมริกาโน่เย็น (ไม่หวาน)', cal: 15, c: 2, p: 1, f: 0 },
-        candidates: [
-          { name: 'อเมริกาโน่เย็น ไม่หวาน', cal: 15, c: 2, p: 1, f: 0 },
-          { name: 'อเมริกาโน่ หวานปกติ', cal: 80, c: 20, p: 1, f: 0 },
-          { name: 'ลาเต้เย็น หวานปกติ', cal: 180, c: 22, p: 6, f: 7 },
-          { name: 'เอสเพรสโซ่เย็น ใส่นมข้น', cal: 220, c: 30, p: 5, f: 9 }
-        ]
-      },
-      {
-        keys: ['ชาไทย', 'ชาเย็น', 'ชาตรามือ'],
-        default: { name: 'ชาไทยเย็น (แก้ว)', cal: 240, c: 35, p: 4, f: 9 },
-        candidates: [
-          { name: 'ชาไทย หวานปกติ', cal: 240, c: 35, p: 4, f: 9 },
-          { name: 'ชาไทย หวานน้อย 25%', cal: 150, c: 20, p: 3, f: 6 },
-          { name: 'ชาดำเย็น ไม่ใส่นม', cal: 110, c: 27, p: 0, f: 0 }
-        ]
-      },
-      {
-        keys: ['มัทฉะ', 'ชาเขียว'],
-        default: { name: 'มัทฉะลาเต้', cal: 180, c: 24, p: 5, f: 6 },
-        candidates: [
-          { name: 'มัทฉะเพียวใส่น้ำ (ไม่ใส่นม)', cal: 10, c: 1, p: 1, f: 0 },
-          { name: 'มัทฉะลาเต้ หวานน้อย', cal: 130, c: 15, p: 5, f: 5 }
-        ]
-      },
-      {
-        keys: ['สุกี้', 'สุกี้แห้ง', 'สุกี้น้ำ'],
-        default: { name: 'สุกี้แห้งหมู', cal: 420, c: 35, p: 26, f: 19 },
-        candidates: [
-          { name: 'สุกี้แห้งไก่/หมู', cal: 420, c: 35, p: 26, f: 19 },
-          { name: 'สุกี้น้ำรวมมิตร', cal: 320, c: 30, p: 24, f: 10 },
-          { name: 'สุกี้ทะเล', cal: 360, c: 32, p: 28, f: 12 }
-        ]
-      },
-      {
-        keys: ['ผัดกะเพรา', 'กะเพรา'],
-        default: { name: 'ผัดกะเพราหมูสับ (กับข้าว)', cal: 350, c: 6, p: 22, f: 26 }
-      },
-      {
-        keys: ['ผัดไทย', 'ผัดไท'],
-        default: { name: 'ผัดไทยกุ้งสด', cal: 550, c: 64, p: 20, f: 23 }
-      }
+    const THAI_FOOD_DATABASE = [
+      // ปิ้ง / ย่าง
+      { id: 1, name: 'หมูย่าง (ไม่ทอดน้ำมัน)', cal: 240, cat: 'grill', method: 'ย่างเตาถ่าน', portion: '1 จาน (100g)', c: 2, p: 24, f: 15 },
+      { id: 2, name: 'คอหมูย่างติดมัน', cal: 320, cat: 'grill', method: 'ย่างติดมัน', portion: '1 จาน (100g)', c: 2, p: 22, f: 25 },
+      { id: 3, name: 'เนื้อย่าง (เสือร้องไห้)', cal: 220, cat: 'grill', method: 'ย่างไม่ใช้น้ำมัน', portion: '1 จาน (100g)', c: 1, p: 28, f: 12 },
+      { id: 4, name: 'ไก่ย่าง (อกล้วน ไม่หนัง)', cal: 150, cat: 'grill', method: 'ย่างแห้ง', portion: '1 ชิ้น', c: 1, p: 30, f: 3 },
+      { id: 5, name: 'ไก่ย่าง (น่อง/สะโพกติดหนัง)', cal: 220, cat: 'grill', method: 'ย่างหมักซอส', portion: '1 ชิ้น', c: 2, p: 24, f: 13 },
+      { id: 6, name: 'หมูปิ้งนมสด (1 ไม้)', cal: 155, cat: 'grill', method: 'ปิ้งซอสหวาน', portion: '1 ไม้', c: 7, p: 9, f: 10 },
+      { id: 7, name: 'หมูปิ้งโบราณ (1 ไม้)', cal: 130, cat: 'grill', method: 'ปิ้งดั้งเดิม', portion: '1 ไม้', c: 5, p: 9, f: 8 },
+
+      // ทอด (แยกความต่างชัดเจนกับย่าง)
+      { id: 8, name: 'หมูทอดกระเทียม (ชุบน้ำมัน)', cal: 380, cat: 'fry', method: 'ทอดน้ำมันลอย', portion: '1 จาน', c: 10, p: 22, f: 29 },
+      { id: 9, name: 'หมูสามชั้นทอดน้ำปลา', cal: 490, cat: 'fry', method: 'ทอดกรอบมันหนา', portion: '1 จาน', c: 5, p: 18, f: 45 },
+      { id: 10, name: 'ไก่ทอดหาดใหญ่ (1 ชิ้น)', cal: 260, cat: 'fry', method: 'ชุบแป้งทอดหอมเจียว', portion: '1 ชิ้น', c: 8, p: 22, f: 16 },
+      { id: 11, name: 'ข้าวหมูทอด', cal: 580, cat: 'fry', method: 'ทอด + ข้าวสวย', portion: '1 จาน', c: 55, p: 24, f: 30 },
+      { id: 12, name: 'ไข่ดาวทอดกรอบ', cal: 125, cat: 'fry', method: 'ทอดน้ำมันร้อน', portion: '1 ฟอง', c: 0.5, p: 6, f: 11 },
+      { id: 13, name: 'ไข่เจียวหมูสับ', cal: 320, cat: 'fry', method: 'ทอดน้ำมัน', portion: '1 จาน', c: 3, p: 14, f: 28 },
+
+      // ต้ม / แกง (แคลอรี่สมจริง ไม่มั่ว 140)
+      { id: 14, name: 'ต้มเล้งแซ่บ (ชามเดี่ยว)', cal: 380, cat: 'soup', method: 'ต้มกระดูกหมูพริกสด', portion: '1 ชาม', c: 8, p: 42, f: 20 },
+      { id: 15, name: 'ต้มเล้งชามใหญ่พิเศษ', cal: 520, cat: 'soup', method: 'ต้มกระดูกชิ้นใหญ่', portion: '1 ชามใหญ่', c: 10, p: 60, f: 26 },
+      { id: 16, name: 'ต้มยำกุ้งน้ำใส', cal: 160, cat: 'soup', method: 'ต้มน้ำใสไม่ใส่นม', portion: '1 ชาม', c: 8, p: 24, f: 3 },
+      { id: 17, name: 'ต้มยำกุ้งน้ำข้น', cal: 290, cat: 'soup', method: 'ต้มใส่นมข้นจืด+พริกเผา', portion: '1 ชาม', c: 16, p: 25, f: 15 },
+      { id: 18, name: 'แกงส้มกุ้งชะอมไข่', cal: 270, cat: 'soup', method: 'แกงส้มไข่ทอดชะอม', portion: '1 ถ้วย', c: 14, p: 18, f: 16 },
+      { id: 19, name: 'แกงจืดเต้าหู้หมูสับ', cal: 180, cat: 'soup', method: 'ต้มน้ำซุปใส', portion: '1 ถ้วย', c: 6, p: 16, f: 10 },
+      { id: 20, name: 'ไข่ต้ม', cal: 75, cat: 'soup', method: 'ต้มน้ำ', portion: '1 ฟอง', c: 0.5, p: 6.5, f: 5 },
+
+      // อาหารจานเดียว / เมนูยอดนิยม
+      { id: 21, name: 'ข้าวกะเพราหมูกรอบ + ไข่ดาว', cal: 760, cat: 'dish', method: 'ผัดน้ำมัน + ทอด', portion: '1 จาน', c: 61, p: 26, f: 47 },
+      { id: 22, name: 'ข้าวกะเพราหมูสับ', cal: 580, cat: 'dish', method: 'ผัดน้ำมัน', portion: '1 จาน', c: 58, p: 24, f: 28 },
+      { id: 23, name: 'ข้าวกะเพราอกไก่', cal: 480, cat: 'dish', method: 'ผัดน้ำมันน้อย', portion: '1 จาน', c: 58, p: 32, f: 12 },
+      { id: 24, name: 'ข้าวมันไก่ต้ม', cal: 590, cat: 'dish', method: 'ข้าวมัน + ไก่ต้ม', portion: '1 จาน', c: 65, p: 26, f: 24 },
+      { id: 25, name: 'ข้าวมันไก่ทอด', cal: 670, cat: 'dish', method: 'ข้าวมัน + ไก่ชุบแป้งทอด', portion: '1 จาน', c: 70, p: 24, f: 33 },
+      { id: 26, name: 'สุกี้แห้งหมู', cal: 420, cat: 'dish', method: 'ผัดวุ้นเส้น + น้ำจิ้ม', portion: '1 จาน', c: 35, p: 26, f: 19 },
+      { id: 27, name: 'สุกี้น้ำรวมมิตร', cal: 320, cat: 'dish', method: 'ต้มน้ำซุป + น้ำจิ้ม', portion: '1 ชาม', c: 30, p: 24, f: 10 },
+      { id: 28, name: 'ชาบู (มื้อปกติ)', cal: 700, cat: 'dish', method: 'ต้มซุปสุกี้/ชาบู', portion: '1 มื้อ', c: 45, p: 55, f: 32 },
+      { id: 29, name: 'หมูกระทะมื้อทั่วไป', cal: 850, cat: 'dish', method: 'ปิ้งย่างหมักซอสกระทะ', portion: '1 มื้อ', c: 50, p: 60, f: 48 },
+      { id: 30, name: 'ส้มตำไทย', cal: 120, cat: 'dish', method: 'ตำคลุก', portion: '1 จาน', c: 24, p: 4, f: 1 },
+      { id: 31, name: 'ข้าวเหนียว (1 ห่อ)', cal: 200, cat: 'dish', method: 'นึ่ง', portion: '1 ห่อ', c: 44, p: 4, f: 1 },
+      { id: 32, name: 'ข้าวสวย (1 ทัพพี)', cal: 80, cat: 'dish', method: 'หุง', portion: '1 ทัพพี', c: 18, p: 1.5, f: 0.2 },
+
+      // เครื่องดื่ม
+      { id: 33, name: 'กาแฟอเมริกาโน่เย็น (ไม่หวาน)', cal: 15, cat: 'drink', method: 'สกัดกาแฟดำ', portion: '1 แก้ว', c: 2, p: 1, f: 0 },
+      { id: 34, name: 'กาแฟลาเต้เย็น (หวานปกติ)', cal: 180, cat: 'drink', method: 'นมสด + กาแฟ', portion: '1 แก้ว', c: 22, p: 6, f: 7 },
+      { id: 35, name: 'ชาไทยเย็น (แก้ว)', cal: 240, cat: 'drink', method: 'ชาตรามือ + นมข้นหวาน', portion: '1 แก้ว', c: 35, p: 4, f: 9 },
+      { id: 36, name: 'ชาไทย หวานน้อย 25%', cal: 150, cat: 'drink', method: 'นมสดหวานน้อย', portion: '1 แก้ว', c: 20, p: 3, f: 6 },
+      { id: 37, name: 'มัทฉะลาเต้', cal: 180, cat: 'drink', method: 'ผงมัทฉะ + นมสด', portion: '1 แก้ว', c: 24, p: 5, f: 6 },
+      { id: 38, name: 'มัทฉะเพียวใส่น้ำ (ไม่หวาน)', cal: 10, cat: 'drink', method: 'มัทฉะชงน้ำเย็น', portion: '1 แก้ว', c: 1, p: 1, f: 0 }
     ];
 
     // ==============================================================
-    // 2. AUTHENTICATION & SESSION MANAGEMENT
+    // 2. USER PROFILE & DYNAMIC TDEE/BMR/BMI STATE
     // ==============================================================
     function getStoredUser() {
       try {
@@ -865,6 +589,267 @@
 
     let currentUser = getStoredUser();
 
+    // Today's balance persistence
+    function getTodayBalance() {
+      if (!currentUser) return 2200;
+      const todayStr = new Date().toDateString();
+      try {
+        const stored = localStorage.getItem(`caltrack_dial_${currentUser.username}_${todayStr}`);
+        if (stored !== null) return parseInt(stored, 10);
+      } catch (e) {}
+      return currentUser.tdee || 2200;
+    }
+
+    function saveTodayBalance(val) {
+      if (!currentUser) return;
+      const todayStr = new Date().toDateString();
+      localStorage.setItem(`caltrack_dial_${currentUser.username}_${todayStr}`, val.toString());
+    }
+
+    let currentBalance = 2200;
+
+    // ==============================================================
+    // 3. 3-TIER DYNAMIC LEVEL & COLOR LOGIC
+    // ==============================================================
+    /*
+      Level 1 (🟢 เขียว - เต็มกราฟ/ปลอดภัย):
+      - เหลือมากกว่าระดับ BMR (> 60% ของ TDEE)
+      - ตัวเลขโชว์: กำลังใช้โควต้า TDEE เพื่อกิจกรรมประจำวัน
+
+      Level 2 (🟠 ส้ม - พอดี/เริ่มเข้าสู่ขีดจำกัด):
+      - เหลืออยู่ในช่วงใกล้ BMR หรือ 30% - 60%
+      - ตัวเลขสลับมาเน้น: แตะระดับ BMR (พลังงานขั้นต่ำของอวัยวะ)
+
+      Level 3 (🔴 แดง - แคลจะหมด/เกินขีดจำกัด):
+      - เหลือต่ำกว่า 30% หรือติดลบ
+      - สลับมาเป็น: BMI Impact / Deficit Alert (โควต้าใกล้หมดหรือกินเกิน)
+    */
+    function renderDialUI() {
+      if (!currentUser) return;
+
+      const tdee = currentUser.tdee || 2200;
+      const bmr = currentUser.bmr || 1600;
+      const bmi = currentUser.bmi || 22.5;
+
+      const bal = currentBalance;
+      const eaten = Math.max(0, tdee - bal);
+      const ratio = Math.max(0, bal / tdee);
+      const pct = Math.round(ratio * 100);
+
+      // DOM elements
+      const mainDisplay = document.getElementById('main-cal-display');
+      const eatenDisplay = document.getElementById('eaten-cal-display');
+      const pctDisplay = document.getElementById('percent-display');
+      const circle = document.getElementById('dial-circle');
+      const tierMetric = document.getElementById('tier-metric-label');
+      const tierSecondary = document.getElementById('tier-secondary-label');
+      const badgeBox = document.getElementById('dynamic-mode-badge');
+      const badgeDot = document.getElementById('dynamic-badge-dot');
+      const badgeText = document.getElementById('dynamic-badge-text');
+      const badgeSub = document.getElementById('dynamic-badge-sub');
+      const minusBtn = document.getElementById('btn-minus-huge');
+
+      // Update basic numbers
+      mainDisplay.innerText = bal.toLocaleString();
+      eatenDisplay.innerText = eaten.toLocaleString();
+      pctDisplay.innerText = `${pct}%`;
+
+      // SVG Stroke calculation (circ = 2 * PI * 100 = 628.32)
+      const circumference = 628.32;
+      const offset = circumference - (Math.min(1, Math.max(0, ratio)) * circumference);
+      circle.style.strokeDashoffset = offset;
+
+      // Dynamic Shifting: 3 Tiers
+      if (bal >= bmr) {
+        // TIER 1: GREEN (TDEE ZONE)
+        circle.setAttribute('stroke', '#10b981');
+        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-white my-1';
+        tierMetric.className = 'text-xs font-mono font-bold text-emerald-400 uppercase';
+        tierMetric.innerText = `โหมด TDEE: โควต้าเต็ม ${tdee.toLocaleString()} kcal`;
+        tierSecondary.innerText = `ระดับพลังงานกิจกรรมประจำวัน (สูงกว่า BMR ${bmr.toLocaleString()})`;
+
+        badgeBox.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        badgeText.innerText = 'ระดับ 1: ใช้งานตามโควต้า TDEE';
+        badgeSub.innerText = 'พลังงานยังเหลือสบายตัว กิจกรรมในเกณฑ์สมดุล';
+
+        minusBtn.className = 'group relative bg-emerald-500 hover:bg-emerald-400 active:scale-[0.97] border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-emerald-500/20 text-slate-950 overflow-hidden';
+      } 
+      else if (bal > 300 && bal < bmr) {
+        // TIER 2: ORANGE (BMR ZONE)
+        circle.setAttribute('stroke', '#f59e0b');
+        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-amber-300 my-1';
+        tierMetric.className = 'text-xs font-mono font-bold text-amber-400 uppercase';
+        tierMetric.innerText = `โหมด BMR: แตะเส้นพลังงานพื้นฐาน`;
+        tierSecondary.innerText = `ระดับการเผาผลาญเพื่ออวัยวะภายใน (${bmr.toLocaleString()} kcal)`;
+
+        badgeBox.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-amber-500/10 text-amber-400 border-amber-500/30';
+        badgeDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        badgeText.innerText = 'ระดับ 2: กำลังพอดี (ใกล้ถึงขีด BMR)';
+        badgeSub.innerText = 'พลังงานเริ่มลดลงสู่ระดับพื้นฐาน เหมาะกับมื้อเบาๆ';
+
+        minusBtn.className = 'group relative bg-amber-500 hover:bg-amber-400 active:scale-[0.97] border-2 border-amber-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-amber-500/20 text-slate-950 overflow-hidden';
+      } 
+      else {
+        // TIER 3: RED (CRITICAL / DEFICIT / BMI IMPACT)
+        circle.setAttribute('stroke', '#ef4444');
+        mainDisplay.className = 'text-5xl sm:text-6xl font-black font-mono tracking-tight text-rose-400 my-1 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]';
+        tierMetric.className = 'text-xs font-mono font-bold text-rose-400 uppercase';
+        
+        if (bal <= 0) {
+          tierMetric.innerText = `เกินโควต้าประจำวัน: ติดลบ ${Math.abs(bal)} kcal!`;
+          tierSecondary.innerText = `ส่งผลต่อดัชนี BMI (${bmi}) และการสะสมไขมันส่วนเกิน`;
+          badgeText.innerText = 'ระดับ 3: เกินเพดาน TDEE ของวันแล้ว!';
+        } else {
+          tierMetric.innerText = `โหมดเตือน BMI: แคลอรี่ใกล้หมด`;
+          tierSecondary.innerText = `ต่ำกว่าขีด BMR (${bmr}) เข้าสู่ช่วง Calorie Deficit เข้มงวด`;
+          badgeText.innerText = 'ระดับ 3: แคลใกล้หมดโควต้า!';
+        }
+
+        badgeBox.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-rose-500/10 text-rose-400 border-rose-500/30 glow-red';
+        badgeDot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-ping';
+        badgeSub.innerText = 'ระวังการรับประทานมื้อดึกเกินความจำเป็น';
+
+        minusBtn.className = 'group relative bg-rose-500 hover:bg-rose-400 active:scale-[0.97] border-2 border-rose-400 rounded-2xl flex flex-col items-center justify-center transition-all shadow-xl shadow-rose-500/30 text-white overflow-hidden';
+      }
+    }
+
+    function adjustCalorie(amount) {
+      currentBalance += amount;
+      saveTodayBalance(currentBalance);
+      renderDialUI();
+    }
+
+    function resetTodayBalance() {
+      if (confirm('ต้องการรีเซ็ตยอดแคลอรี่กลับสู่โควต้าเต็มวัน?')) {
+        currentBalance = currentUser ? currentUser.tdee : 2200;
+        saveTodayBalance(currentBalance);
+        renderDialUI();
+        showToast('รีเซ็ตยอดกลับสู่โควต้าเต็มเรียบร้อย');
+      }
+    }
+
+    function deductMenuCalorie(name, cal) {
+      currentBalance -= cal;
+      saveTodayBalance(currentBalance);
+      renderDialUI();
+      showToast(`หักยอด ${name} (-${cal} kcal) เข้าหน้าหลักแล้ว!`);
+      // Switch back to dial
+      switchTab('dial');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const txt = document.getElementById('toast-text');
+      txt.innerText = msg;
+      toast.classList.remove('opacity-0', '-translate-y-16');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-16');
+      }, 2500);
+    }
+
+    // ==============================================================
+    // 4. PRECISION FOOD SEARCH ENGINE
+    // ==============================================================
+    let currentCategory = 'all';
+    let searchQuery = '';
+
+    function renderFoodSearchList() {
+      const listEl = document.getElementById('search-results-list');
+      const q = searchQuery.trim().toLowerCase();
+
+      let filtered = THAI_FOOD_DATABASE.filter(item => {
+        const matchCat = currentCategory === 'all' || item.cat === currentCategory;
+        const matchName = !q || item.name.toLowerCase().includes(q) || item.method.toLowerCase().includes(q);
+        return matchCat && matchName;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-16 text-slate-500 text-xs font-mono space-y-1">
+            <div>NO_ACCURATE_MATCH // ไม่พบเมนูที่ค้นหา</div>
+            <div class="text-[11px] text-slate-600">ลองพิมพ์คำค้นสั้นๆ เช่น หมู, ไก่, ย่าง, ทอด, หรือ ต้ม</div>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(item => `
+        <div class="p-3.5 bg-surface-bg border border-surface-border hover:border-slate-700 rounded-xl flex items-center justify-between transition group">
+          <div class="space-y-1 pr-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium text-slate-100 group-hover:text-white">${item.name}</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-surface-card border border-surface-border text-slate-400">
+                ${item.method}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+              <span>${item.portion}</span>
+              <span>•</span>
+              <span>C:${item.c}g P:${item.p}g F:${item.f}g</span>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="text-right">
+              <div class="font-mono font-bold text-sm text-emerald-400">${item.cal}</div>
+              <div class="text-[9px] text-slate-500 font-mono">kcal</div>
+            </div>
+            <button onclick="deductMenuCalorie('${item.name}', ${item.cal})" 
+              title="หักยอดนี้ออกจากโควต้าหน้าแรก"
+              class="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 active:scale-95 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 hover:border-emerald-500 rounded-lg text-[11px] font-mono font-semibold transition flex items-center gap-1">
+              <span>หักยอด</span>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function handleFoodSearch(val) {
+      searchQuery = val;
+      renderFoodSearchList();
+    }
+
+    function filterCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-pill').forEach(btn => {
+        if (btn.getAttribute('data-cat') === cat) {
+          btn.className = 'cat-pill px-2.5 py-1 rounded-lg bg-emerald-500 text-slate-950 font-semibold shrink-0';
+        } else {
+          btn.className = 'cat-pill px-2.5 py-1 rounded-lg bg-surface-bg text-slate-400 border border-surface-border shrink-0';
+        }
+      });
+      renderFoodSearchList();
+    }
+
+    // ==============================================================
+    // 5. NAVIGATION & TAB SWITCHING
+    // ==============================================================
+    function switchTab(tabId) {
+      const tabs = ['dial', 'search', 'profile'];
+      tabs.forEach(t => {
+        document.getElementById(`screen-${t}`).classList.add('hidden');
+        const navBtn = document.getElementById(`nav-${t}`);
+        navBtn.classList.remove('text-emerald-400', 'font-semibold');
+        navBtn.classList.add('text-slate-400');
+      });
+
+      document.getElementById(`screen-${tabId}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      activeNav.classList.remove('text-slate-400');
+      activeNav.classList.add('text-emerald-400', 'font-semibold');
+
+      if (tabId === 'dial') renderDialUI();
+      if (tabId === 'search') renderFoodSearchList();
+      if (tabId === 'profile') updateProfileBaselines();
+    }
+
+    // ==============================================================
+    // 6. AUTH & ONBOARDING HANDLERS
+    // ==============================================================
     function setAuthMode(mode) {
       const formReg = document.getElementById('form-register');
       const formLogin = document.getElementById('form-login');
@@ -913,18 +898,9 @@
       const weight = parseFloat(document.getElementById('reg-weight').value) || 70;
       const activity = parseFloat(document.getElementById('reg-activity').value) || 1.55;
 
-      if (!username) {
-        alert('กรุณาระบุชื่อผู้ใช้');
-        return;
-      }
-      if (pin.length < 4 || pin.length > 6) {
-        alert('กรุณาตั้งรหัส PIN เป็นตัวเลข 4-6 หลัก');
-        return;
-      }
-      if (pin !== pinConfirm) {
-        alert('รหัส PIN และ ยืนยัน PIN ไม่ตรงกัน');
-        return;
-      }
+      if (!username) return alert('กรุณาระบุชื่อผู้ใช้');
+      if (pin.length < 4 || pin.length > 6) return alert('รหัส PIN ต้องเป็นตัวเลข 4-6 หลัก');
+      if (pin !== pinConfirm) return alert('รหัส PIN ไม่ตรงกัน');
 
       const hM = height / 100;
       const bmi = parseFloat((weight / (hM * hM)).toFixed(1));
@@ -946,12 +922,9 @@
 
       saveStoredUser(newUser);
       currentUser = newUser;
+      currentBalance = tdee;
+      saveTodayBalance(currentBalance);
 
-      // Clean start for meals
-      meals = [];
-      saveStoredMeals(meals);
-
-      // Trigger animated checkmark & teasing modal
       showSuccessModal(newUser);
     }
 
@@ -987,25 +960,6 @@
       }
     }
 
-    function promptChangePin() {
-      const cur = prompt('กรุณากรอก PIN เดิม:');
-      if (cur !== currentUser.pin) {
-        alert('PIN เดิมไม่ถูกต้อง');
-        return;
-      }
-      const newP = prompt('กรอกรหัส PIN ใหม่ (4-6 หลัก):');
-      if (newP && newP.length >= 4 && newP.length <= 6) {
-        currentUser.pin = newP;
-        saveStoredUser(currentUser);
-        alert('เปลี่ยนรหัส PIN เรียบร้อย');
-      } else {
-        alert('รูปแบบ PIN ไม่ถูกต้อง');
-      }
-    }
-
-    // ==============================================================
-    // 3. HUMOR / TEASING MODAL LOGIC (HEIGHT > 185, WEIGHT > 100)
-    // ==============================================================
     function showSuccessModal(user) {
       const teaseTitle = document.getElementById('modal-tease-title');
       const h = user.height;
@@ -1022,16 +976,13 @@
         keyword = 'เรียบร้อย';
       }
 
-      // Highlight colored keyword as requested:
-      // "เน้นสีคำว่า เปรตเดินได้ด้วย ถ้าหนักเกิน 100 ให้บอกว่าสุกรเดินดิน ถ้ามีทั้งสองใส่ว่า เปรตอ้วน"
       teaseTitle.innerHTML = `ตั้งค่าสำเร็จ <span class="text-emerald-400 font-black text-xl sm:text-2xl drop-shadow-[0_0_12px_rgba(52,211,153,0.5)] underline decoration-emerald-500/40">${keyword}</span> สำเร็จ`;
 
       document.getElementById('modal-height-val').innerText = `${user.height} cm`;
       document.getElementById('modal-weight-val').innerText = `${user.weight} kg`;
       document.getElementById('modal-tdee-val').innerText = `${user.tdee.toLocaleString()} kcal`;
 
-      const modal = document.getElementById('modal-success');
-      modal.classList.remove('hidden');
+      document.getElementById('modal-success').classList.remove('hidden');
     }
 
     function dismissSuccessModal() {
@@ -1043,7 +994,6 @@
       document.getElementById('auth-container').classList.add('hidden');
       document.getElementById('app-container').classList.remove('hidden');
 
-      // Populate user tags & profile
       if (currentUser) {
         document.getElementById('header-user-tag').innerText = currentUser.username;
         document.getElementById('profile-user-display').innerText = currentUser.username;
@@ -1053,536 +1003,12 @@
         document.getElementById('profile-activity').value = currentUser.activity || 1.55;
       }
 
-      meals = getStoredMeals();
-      updateTodayHeader();
-      renderTodayMeals();
+      currentBalance = getTodayBalance();
       updateProfileBaselines();
-      switchTab('log');
+      renderDialUI();
+      switchTab('dial');
     }
 
-    // ==============================================================
-    // 4. STORAGE & MEAL RECORDING (CLEAN SLATE BY DEFAULT)
-    // ==============================================================
-    function getTodayStr() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    }
-
-    function getStoredMeals() {
-      try {
-        const data = localStorage.getItem('caltrack_meals');
-        if (data) return JSON.parse(data);
-      } catch (e) {}
-      return []; // Clean slate, no mock data!
-    }
-
-    function saveStoredMeals(list) {
-      localStorage.setItem('caltrack_meals', JSON.stringify(list));
-    }
-
-    let meals = getStoredMeals();
-    let currentHistorySubTab = 'today';
-
-    function switchHistorySubTab(subTab) {
-      currentHistorySubTab = subTab;
-      const btnToday = document.getElementById('subtab-btn-today');
-      const btnPast = document.getElementById('subtab-btn-past');
-      const viewToday = document.getElementById('view-today');
-      const viewPast = document.getElementById('view-past');
-
-      if (subTab === 'today') {
-        btnToday.className = 'flex-1 py-1.5 rounded-lg text-emerald-400 bg-surface-card border border-surface-border font-semibold transition';
-        btnPast.className = 'flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition';
-        viewToday.classList.remove('hidden');
-        viewPast.classList.add('hidden');
-        renderTodayMeals();
-      } else {
-        btnPast.className = 'flex-1 py-1.5 rounded-lg text-emerald-400 bg-surface-card border border-surface-border font-semibold transition';
-        btnToday.className = 'flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition';
-        viewPast.classList.remove('hidden');
-        viewToday.classList.add('hidden');
-        renderPastHistory();
-      }
-    }
-
-    function switchTab(tabId) {
-      const screens = ['log', 'today', 'analytics', 'profile'];
-      const titles = {
-        'log': 'บันทึกมื้ออาหาร',
-        'today': 'ประวัติการกิน',
-        'analytics': 'วิเคราะห์ทิศทางและเวลา',
-        'profile': 'ข้อมูลส่วนตัว & พลังงาน'
-      };
-
-      screens.forEach(s => {
-        document.getElementById(`screen-${s}`).classList.add('hidden');
-        const btn = document.getElementById(`tab-${s}`);
-        btn.classList.remove('text-emerald-400', 'font-semibold');
-        btn.classList.add('text-slate-400');
-      });
-
-      document.getElementById(`screen-${tabId}`).classList.remove('hidden');
-      document.getElementById(`screen-title`).innerText = titles[tabId];
-      const activeBtn = document.getElementById(`tab-${tabId}`);
-      activeBtn.classList.remove('text-slate-400');
-      activeBtn.classList.add('text-emerald-400', 'font-semibold');
-
-      if (tabId === 'today') {
-        switchHistorySubTab(currentHistorySubTab);
-      }
-      if (tabId === 'analytics') computeAnalytics();
-      if (tabId === 'profile') updateProfileBaselines();
-    }
-
-    // ==============================================================
-    // 5. NATURAL PARSER & MULTI-ITEM ENGINE
-    // ==============================================================
-    let currentParsed = null;
-    let currentSelectedCandidate = null;
-
-    function parseInput(raw) {
-      const text = raw.trim();
-      if (!text) return null;
-
-      // 1. Direct Calorie Spec: e.g. "ข้าวเหนียวหมูปิ้ง 450"
-      const numMatch = text.match(/(\d{2,4})\s*(kcal|แคล)?$/i);
-      if (numMatch && !text.includes('+') && !text.includes('และ') && !text.includes('แล้ว')) {
-        const cal = parseInt(numMatch[1], 10);
-        const name = text.replace(numMatch[0], '').trim() || text;
-        return {
-          type: 'single',
-          source: 'user',
-          name: name,
-          cal: cal,
-          confidence: 'EXACT_USER_SPEC'
-        };
-      }
-
-      // 2. Multi-item combo parsing: handles '+', ',', 'และ', 'แล้ว', 'กับ', or newline / space combos
-      let splitItems = [];
-      if (text.includes('+') || text.includes('และ') || text.includes('แล้ว') || text.includes('กับ') || text.includes(',') || text.includes('\n')) {
-        splitItems = text.split(/\s*[\+,\n]\s*|\s+(?:และ|แล้ว|กับ)\s+/i).map(s => s.trim()).filter(Boolean);
-      } else {
-        // Space separated test
-        const words = text.split(/\s+/).filter(Boolean);
-        if (words.length >= 2) {
-          const matchCount = words.filter(w => FOOD_ITEMS.some(item => item.keys.some(k => w.includes(k) || k.includes(w)))).length;
-          if (matchCount >= 2) {
-            splitItems = words;
-          }
-        }
-      }
-
-      if (splitItems.length > 1) {
-        let totalCal = 0;
-        let cTotal = 0, pTotal = 0, fTotal = 0;
-        const subDetails = [];
-
-        splitItems.forEach(itemStr => {
-          let matched = null;
-          let bestScore = 0;
-
-          // Quantity detection like "ข้าวเหนียว 2 ห่อ", "หมูปิ้ง 3 ไม้"
-          let multiplier = 1;
-          const multiMatch = itemStr.match(/(\d+)\s*(ไม้|ห่อ|จาน|ชิ้น|แก้ว|ฟอง|ถุง)/);
-          if (multiMatch) {
-            multiplier = parseInt(multiMatch[1], 10) || 1;
-          }
-
-          FOOD_ITEMS.forEach(f => {
-            f.keys.forEach(k => {
-              if (itemStr.includes(k) && k.length > bestScore) {
-                bestScore = k.length;
-                matched = f.default;
-              }
-            });
-          });
-
-          if (matched) {
-            const subCal = matched.cal * multiplier;
-            totalCal += subCal;
-            cTotal += (matched.c || 20) * multiplier;
-            pTotal += (matched.p || 15) * multiplier;
-            fTotal += (matched.f || 10) * multiplier;
-            subDetails.push({ name: itemStr, cal: subCal });
-          } else {
-            const estCal = 250 * multiplier;
-            totalCal += estCal;
-            cTotal += 25 * multiplier;
-            pTotal += 12 * multiplier;
-            fTotal += 10 * multiplier;
-            subDetails.push({ name: itemStr, cal: estCal });
-          }
-        });
-
-        return {
-          type: 'combo',
-          source: 'auto',
-          name: splitItems.join(' + '),
-          cal: totalCal,
-          subDetails: subDetails,
-          macros: { c: cTotal, p: pTotal, f: fTotal },
-          confidence: 'MULTI_COMBO_ESTIMATE'
-        };
-      }
-
-      // 3. Single Match with Disambiguation / Candidates
-      let matchedItem = null;
-      let longestKey = 0;
-
-      FOOD_ITEMS.forEach(item => {
-        item.keys.forEach(k => {
-          if (text.includes(k) && k.length > longestKey) {
-            longestKey = k.length;
-            matchedItem = item;
-          }
-        });
-      });
-
-      if (matchedItem) {
-        return {
-          type: 'single',
-          source: 'auto',
-          name: matchedItem.default.name,
-          cal: matchedItem.default.cal,
-          macros: { c: matchedItem.default.c || 20, p: matchedItem.default.p || 15, f: matchedItem.default.f || 10 },
-          candidates: matchedItem.candidates || null,
-          confidence: 'KNOWLEDGE_BASE_MATCH'
-        };
-      }
-
-      // Fallback
-      return {
-        type: 'single',
-        source: 'estimate',
-        name: text,
-        cal: 350,
-        macros: { c: 35, p: 15, f: 12 },
-        confidence: 'ESTIMATED_AVERAGE'
-      };
-    }
-
-    function handleInput(text) {
-      if (!text.trim()) {
-        currentParsed = null;
-        currentSelectedCandidate = null;
-        renderUI('idle');
-        return;
-      }
-
-      currentParsed = parseInput(text);
-      currentSelectedCandidate = null;
-      renderUI('parsed');
-    }
-
-    function renderUI(state) {
-      const indicator = document.getElementById('preview-indicator');
-      const textEl = document.getElementById('preview-text');
-      const badge = document.getElementById('preview-badge');
-      const tagsEl = document.getElementById('breakdown-tags');
-      const candidateSec = document.getElementById('candidate-section');
-      const candidatePills = document.getElementById('candidate-pills');
-
-      if (state === 'idle') {
-        indicator.className = 'w-1.5 h-1.5 rounded-full bg-slate-600';
-        textEl.innerText = 'พร้อมรับข้อมูล';
-        textEl.className = 'text-slate-400 font-medium';
-        badge.innerText = '-';
-        badge.className = 'px-2 py-0.5 rounded text-[11px] font-mono bg-slate-900 text-slate-500 border border-slate-800';
-        tagsEl.classList.add('hidden');
-        tagsEl.innerHTML = '';
-        candidateSec.classList.add('hidden');
-        return;
-      }
-
-      const p = currentParsed;
-      const displayCal = currentSelectedCandidate ? currentSelectedCandidate.cal : p.cal;
-      const displayName = currentSelectedCandidate ? currentSelectedCandidate.name : p.name;
-
-      indicator.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400';
-      textEl.innerText = displayName;
-      textEl.className = 'text-slate-100 font-semibold truncate max-w-[200px]';
-
-      badge.innerText = `${displayCal} kcal`;
-      badge.className = 'px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
-
-      // Breakdown tags
-      tagsEl.classList.remove('hidden');
-      if (p.type === 'combo' && p.subDetails) {
-        tagsEl.innerHTML = p.subDetails.map(s => `
-          <span class="px-2 py-0.5 rounded bg-surface-card border border-surface-border text-slate-300">
-            ${s.name} <strong class="text-emerald-400 font-bold">${s.cal}</strong>
-          </span>
-        `).join('');
-      } else if (p.macros) {
-        tagsEl.innerHTML = `
-          <span class="px-2 py-0.5 rounded bg-surface-card border border-surface-border text-slate-300">C: ${p.macros.c}g</span>
-          <span class="px-2 py-0.5 rounded bg-surface-card border border-surface-border text-slate-300">P: ${p.macros.p}g</span>
-          <span class="px-2 py-0.5 rounded bg-surface-card border border-surface-border text-slate-300">F: ${p.macros.f}g</span>
-        `;
-      }
-
-      // Disambiguation candidates
-      if (p.candidates && p.candidates.length > 0) {
-        candidateSec.classList.remove('hidden');
-        candidatePills.innerHTML = p.candidates.map((c, idx) => {
-          const isSelected = currentSelectedCandidate ? currentSelectedCandidate.name === c.name : (idx === 0 && p.name === c.name);
-          const style = isSelected 
-            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-semibold' 
-            : 'bg-surface-card text-slate-400 border-surface-border hover:text-slate-200 hover:border-slate-600';
-          return `
-            <button onclick="selectCandidate(${idx})" class="px-2.5 py-1 rounded-lg text-[11px] font-mono border transition ${style}">
-              ${c.name} (${c.cal} kcal)
-            </button>
-          `;
-        }).join('');
-      } else {
-        candidateSec.classList.add('hidden');
-      }
-    }
-
-    function selectCandidate(index) {
-      if (!currentParsed || !currentParsed.candidates) return;
-      currentSelectedCandidate = currentParsed.candidates[index];
-      renderUI('parsed');
-    }
-
-    function testQuick(text) {
-      const input = document.getElementById('log-input');
-      input.value = text;
-      handleInput(text);
-    }
-
-    document.getElementById('log-input').addEventListener('input', (e) => {
-      handleInput(e.target.value);
-    });
-
-    document.getElementById('btn-save').addEventListener('click', () => {
-      if (!currentParsed) return;
-
-      const saveName = currentSelectedCandidate ? currentSelectedCandidate.name : currentParsed.name;
-      const saveCal = currentSelectedCandidate ? currentSelectedCandidate.cal : currentParsed.cal;
-
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-      meals.unshift({
-        id: Date.now(),
-        name: saveName,
-        cal: saveCal,
-        time: timeStr,
-        date: getTodayStr(),
-        source: currentParsed.source
-      });
-
-      saveStoredMeals(meals);
-
-      document.getElementById('log-input').value = '';
-      currentParsed = null;
-      currentSelectedCandidate = null;
-      renderUI('idle');
-      updateTodayHeader();
-      switchTab('today');
-    });
-
-    function deleteMeal(id) {
-      meals = meals.filter(m => m.id !== id);
-      saveStoredMeals(meals);
-      renderTodayMeals();
-      updateTodayHeader();
-      if (currentHistorySubTab === 'past') renderPastHistory();
-    }
-
-    function updateTodayHeader() {
-      const todayStr = getTodayStr();
-      const todayMeals = meals.filter(m => m.date === todayStr);
-      const total = todayMeals.reduce((sum, m) => sum + m.cal, 0);
-
-      document.getElementById('header-total-cal').innerText = total.toLocaleString();
-      document.getElementById('today-total-number').innerText = total.toLocaleString();
-      document.getElementById('meal-count').innerText = todayMeals.length;
-    }
-
-    function renderTodayMeals() {
-      const todayStr = getTodayStr();
-      const todayMeals = meals.filter(m => m.date === todayStr);
-      const listEl = document.getElementById('meal-list');
-
-      if (todayMeals.length === 0) {
-        listEl.innerHTML = '<div class="text-center py-12 text-xs text-slate-500 font-mono">NO_ENTRIES_YET // พร้อมรับการบันทึกอาหาร</div>';
-        return;
-      }
-
-      listEl.innerHTML = todayMeals.map(m => `
-        <div class="p-3.5 bg-surface-bg border border-surface-border rounded-xl flex items-center justify-between group hover:border-slate-700 transition">
-          <div class="space-y-0.5">
-            <div class="text-xs font-medium text-slate-100">${m.name}</div>
-            <div class="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-              <span>${m.time}</span>
-              <span>/</span>
-              <span class="${m.source === 'user' ? 'text-emerald-400' : 'text-slate-400'}">
-                ${m.source === 'user' ? 'USER_INPUT' : 'AUTO_MATCH'}
-              </span>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="font-mono font-bold text-sm text-slate-200">${m.cal} <span class="text-xs font-normal text-slate-400">kcal</span></span>
-            <button onclick="deleteMeal(${m.id})" class="text-slate-600 hover:text-rose-400 p-1 transition" title="ลบรายการ">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            </button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderPastHistory() {
-      const todayStr = getTodayStr();
-      const pastListEl = document.getElementById('past-days-list');
-
-      const dateGroups = {};
-      meals.forEach(m => {
-        if (!dateGroups[m.date]) dateGroups[m.date] = [];
-        dateGroups[m.date].push(m);
-      });
-
-      const dates = Object.keys(dateGroups).sort().reverse();
-      const pastDates = dates.filter(d => d !== todayStr);
-
-      const totalAllMonth = meals.reduce((sum, m) => sum + m.cal, 0);
-      const daysCount = dates.length || 1;
-      const avgDay = Math.round(totalAllMonth / daysCount);
-
-      document.getElementById('month-total-cal').innerText = totalAllMonth.toLocaleString();
-      document.getElementById('month-avg-cal').innerText = avgDay.toLocaleString();
-
-      if (pastDates.length === 0) {
-        pastListEl.innerHTML = '<div class="text-center py-10 text-xs text-slate-500 font-mono">NO_PAST_ENTRIES // ยังไม่มีประวัติวันก่อนหน้า</div>';
-        return;
-      }
-
-      pastListEl.innerHTML = pastDates.map(d => {
-        const dayMeals = dateGroups[d];
-        const dayTotal = dayMeals.reduce((sum, m) => sum + m.cal, 0);
-        const parts = d.split('-');
-        const dateDisplay = `${parseInt(parts[2], 10)}/${parseInt(parts[1], 10)}/${parts[0]}`;
-
-        return `
-          <div class="bg-surface-bg border border-surface-border rounded-xl overflow-hidden">
-            <div class="p-3.5 flex items-center justify-between cursor-pointer hover:bg-surface-card/60 transition" onclick="togglePastDay('${d}')">
-              <div>
-                <div class="text-xs font-semibold text-slate-200">${dateDisplay}</div>
-                <div class="text-[10px] text-slate-400 font-mono mt-0.5">${dayMeals.length} รายการ</div>
-              </div>
-              <div class="text-right flex items-center gap-2">
-                <span class="font-mono font-bold text-sm text-emerald-400">${dayTotal.toLocaleString()} <span class="text-xs font-normal text-slate-400">kcal</span></span>
-                <svg id="chevron-${d}" class="w-3.5 h-3.5 text-slate-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-              </div>
-            </div>
-            <div id="details-${d}" class="hidden px-3.5 pb-3 pt-1 border-t border-surface-border space-y-1.5 text-xs bg-surface-card/40">
-              ${dayMeals.map(m => `
-                <div class="flex justify-between items-center text-slate-400 py-1 border-b border-surface-border/50 last:border-0">
-                  <span class="truncate pr-2">${m.name}</span>
-                  <span class="font-mono text-slate-300 font-semibold shrink-0">${m.cal} kcal</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function togglePastDay(dateStr) {
-      const el = document.getElementById(`details-${dateStr}`);
-      const icon = document.getElementById(`chevron-${dateStr}`);
-      if (el) {
-        el.classList.toggle('hidden');
-        if (icon) icon.classList.toggle('rotate-180');
-      }
-    }
-
-    // Analytics Computation
-    function computeAnalytics() {
-      if (meals.length === 0) {
-        document.getElementById('analytics-archetype').innerText = 'NO_DATA';
-        document.getElementById('analytics-description').innerText = 'ยังไม่มีบันทึกอาหารในระบบ กรุณาบันทึกมื้อแรกเพื่อเริ่มวิเคราะห์';
-        document.getElementById('stat-avg-meals').innerText = '0';
-        document.getElementById('stat-first-time').innerText = '-';
-        document.getElementById('stat-top-words').innerText = '-';
-        document.getElementById('stat-avg-cal').innerText = '0 kcal';
-        return;
-      }
-
-      let mCal = 0, nCal = 0, eCal = 0, lCal = 0;
-      let totalCal = 0;
-
-      meals.forEach(m => {
-        totalCal += m.cal;
-        const hour = parseInt(m.time.split(':')[0], 10);
-        if (hour >= 6 && hour < 11) mCal += m.cal;
-        else if (hour >= 11 && hour < 15) nCal += m.cal;
-        else if (hour >= 15 && hour < 20) eCal += m.cal;
-        else lCal += m.cal;
-      });
-
-      const safeTotal = totalCal || 1;
-      const mPct = Math.round((mCal / safeTotal) * 100);
-      const nPct = Math.round((nCal / safeTotal) * 100);
-      const ePct = Math.round((eCal / safeTotal) * 100);
-      const lPct = Math.round((lCal / safeTotal) * 100);
-
-      document.getElementById('dist-morning-label').innerText = `${mPct}% (${mCal} kcal)`;
-      document.getElementById('dist-morning-bar').style.width = `${mPct}%`;
-
-      document.getElementById('dist-noon-label').innerText = `${nPct}% (${nCal} kcal)`;
-      document.getElementById('dist-noon-bar').style.width = `${nPct}%`;
-
-      document.getElementById('dist-eve-label').innerText = `${ePct}% (${eCal} kcal)`;
-      document.getElementById('dist-eve-bar').style.width = `${ePct}%`;
-
-      document.getElementById('dist-night-label').innerText = `${lPct}% (${lCal} kcal)`;
-      document.getElementById('dist-night-bar').style.width = `${lPct}%`;
-
-      let pattern = 'BALANCED_EATER';
-      let desc = 'พลังงานกระจายสม่ำเสมอตลอดวัน';
-      if (nPct >= 45 && lPct >= 15) {
-        pattern = 'LUNCH_HEAVY / LATE_NIGHT';
-        desc = `สัดส่วนพลังงาน ${nPct}% เข้าสู่ร่างกายช่วงกลางวัน และมีบันทึกพลังงานรอง ${lPct}% ในช่วงดึก`;
-      } else if (nPct >= 50) {
-        pattern = 'LUNCH_CENTRIC';
-        desc = `สัดส่วนพลังงานหลัก ${nPct}% กระจุกตัวในช่วง 11:00 - 15:00 น.`;
-      } else if (ePct >= 45) {
-        pattern = 'EVENING_HEAVY';
-        desc = `สัดส่วนพลังงานหลัก ${ePct}% เกิดขึ้นในช่วงเย็น 15:00 - 20:00 น.`;
-      } else if (lPct >= 35) {
-        pattern = 'NIGHT_OWL_GRAZER';
-        desc = `สัดส่วนพลังงาน ${lPct}% เกิดขึ้นหลัง 20:00 น.`;
-      }
-
-      document.getElementById('analytics-archetype').innerText = pattern;
-      document.getElementById('analytics-description').innerText = desc;
-
-      const days = [...new Set(meals.map(m => m.date))];
-      const dayCount = days.length || 1;
-      const avgMeals = (meals.length / dayCount).toFixed(1);
-      const avgCal = Math.round(totalCal / dayCount);
-
-      document.getElementById('stat-avg-meals').innerText = avgMeals;
-      document.getElementById('stat-avg-cal').innerText = `${avgCal.toLocaleString()} kcal`;
-
-      const sortedTimes = [...meals].map(m => m.time).sort();
-      document.getElementById('stat-first-time').innerText = sortedTimes[0] ? `${sortedTimes[0]} น.` : '-';
-
-      const words = {};
-      meals.forEach(m => {
-        m.name.split(/[\s\+\,]+/).forEach(w => {
-          if (w.length > 1) words[w] = (words[w] || 0) + 1;
-        });
-      });
-      const topWords = Object.entries(words).sort((a,b) => b[1] - a[1]).slice(0, 3).map(e => e[0]).join(', ');
-      document.getElementById('stat-top-words').innerText = topWords || '-';
-    }
-
-    // Profile Real-time Calculation
     function updateProfileBaselines() {
       const ageInput = document.getElementById('input-age');
       const weightInput = document.getElementById('input-weight');
@@ -1619,18 +1045,20 @@
       }
     }
 
-    function clearAllData() {
-      if (confirm('ยืนยันล้างประวัติการกินทั้งหมด?')) {
-        meals = [];
-        saveStoredMeals(meals);
-        updateTodayHeader();
-        renderTodayMeals();
-        renderPastHistory();
-        computeAnalytics();
+    function promptChangePin() {
+      const cur = prompt('กรุณากรอก PIN เดิม:');
+      if (cur !== currentUser.pin) return alert('PIN เดิมไม่ถูกต้อง');
+      const newP = prompt('กรอกรหัส PIN ใหม่ (4-6 หลัก):');
+      if (newP && newP.length >= 4 && newP.length <= 6) {
+        currentUser.pin = newP;
+        saveStoredUser(currentUser);
+        alert('เปลี่ยนรหัส PIN เรียบร้อย');
+      } else {
+        alert('รูปแบบ PIN ไม่ถูกต้อง');
       }
     }
 
-    // Application Bootstrap Check
+    // App Initializer
     window.addEventListener('DOMContentLoaded', () => {
       calcAuthBaselines();
       if (currentUser) {
